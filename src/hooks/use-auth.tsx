@@ -51,7 +51,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (email: string, password: string) => {
     let auth: User | null = null;
-    if (email === "admin@sistema.com" && password === "admin123") {
+    
+    // Check for dynamic admin credentials
+    const savedAdminEmail = localStorage.getItem("admin_email") || "admin@sistema.com";
+    const savedAdminPass = localStorage.getItem("admin_password") || "admin123";
+
+    if (email === savedAdminEmail && password === savedAdminPass) {
       auth = { id: "admin-1", email, role: "admin", name: "Admin Global" };
     } else if (email === "operador@sistema.com" && password === "op123") {
       auth = { id: "op-1", email, role: "operator", name: "Operador Padrão" };
