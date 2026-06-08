@@ -1,74 +1,59 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { CategorySection } from "../components/dashboard/category-section";
-import { 
-  Users, 
-  Receipt, 
-  TrendingUp, 
-  AlertCircle 
-} from "lucide-react";
+import { DashboardMetrics } from "../components/dashboard/dashboard-metrics";
+import { BillingSimulator } from "../components/dashboard/billing-simulator";
+import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   component: DashboardComponent,
 });
 
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  status: "Pendente" | "Pago";
+  value: string;
+}
+
 function DashboardComponent() {
+  const [clients, setClients] = useState<Client[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("app_clients");
+    if (saved) setClients(JSON.parse(saved));
+    
+    // Listen for storage changes to update in real-time if multiple tabs are open
+    const handleStorage = () => {
+      const updated = localStorage.getItem("app_clients");
+      if (updated) setClients(JSON.parse(updated));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard</h1>
           <p className="text-slate-500">Bem-vindo ao seu painel de gerenciamento.</p>
         </div>
 
-        {/* Sistema de Categorias Ocultas (Condicional) */}
-        <CategorySection />
+        {/* 1. Cards de Métricas em Tempo Real */}
+        <DashboardMetrics clients={clients} />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
-              <p className="text-xs text-muted-foreground">+20.1% em relação ao mês passado</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cobranças Pendentes</CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">45</div>
-              <p className="text-xs text-muted-foreground">R$ 12,450.00 aguardando</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Pagamento</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">89%</div>
-              <p className="text-xs text-muted-foreground">Estabilidade mantida</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Atrasos Críticos</CardTitle>
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">Requer atenção imediata</p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-1">
+          {/* 2. Área de Simulação */}
+          <BillingSimulator />
+          
+          {/* Sistema de Categorias Ocultas */}
+          <CategorySection />
         </div>
       </div>
     </DashboardLayout>
   );
 }
+
 
