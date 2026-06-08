@@ -27,7 +27,8 @@ function LoginComponent() {
   };
 
   const handleSupport = () => {
-    window.open("https://wa.me/5511999999999?text=Olá, preciso de ajuda com o acesso ao sistema.", "_blank");
+    const text = encodeURIComponent("Olá! Estou na tela de login do painel e preciso de ajuda com o meu acesso.");
+    window.open(`https://wa.me/5511999999999?text=${text}`, "_blank");
   };
 
   return (
@@ -69,22 +70,20 @@ function LoginComponent() {
                 Entrar
               </Button>
             </form>
+            
+            <div className="mt-4 text-center">
+              <button 
+                onClick={handleSupport}
+                className="text-sm text-slate-500 hover:text-primary transition-colors font-medium underline-offset-4 hover:underline"
+              >
+                Precisa de ajuda? Fale com o Suporte
+              </button>
+            </div>
           </CardContent>
         </Card>
-        
-        <div className="flex justify-center">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleSupport}
-            className="flex items-center gap-2 text-slate-500 hover:text-primary border-slate-200 dark:border-slate-800"
-          >
-            <MessageCircleQuestion className="h-4 w-4" />
-            Suporte
-          </Button>
-        </div>
       </div>
     </div>
   );
 }
+
 
