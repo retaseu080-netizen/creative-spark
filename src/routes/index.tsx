@@ -110,9 +110,9 @@ function DashboardComponent() {
                         <TableBody>
                           {overdueClients.map(c => (
                             <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                              <TableCell className="py-2 pl-0 font-medium text-xs">{c.name}</TableCell>
+                              <TableCell className="py-2 pl-0 font-medium text-xs text-red-600">{c.name}</TableCell>
                               <TableCell className="py-2 text-right pr-0">
-                                <Badge variant="destructive" className="text-[10px] h-5">{c.dueDate}</Badge>
+                                <Badge variant="destructive" className="text-[10px] h-5 bg-red-600">{c.dueDate}</Badge>
                               </TableCell>
                             </TableRow>
                           ))}
