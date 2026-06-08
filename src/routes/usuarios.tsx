@@ -29,8 +29,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "../components/ui/select";
-import { UserPlus, Shield, UserCircle, Edit, Trash2 } from "lucide-react";
+import { UserPlus, Shield, UserCircle, Edit, Trash2, Circle } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "../lib/utils";
 
 export const Route = createFileRoute("/usuarios")({
   component: UsersComponent,
@@ -45,8 +46,8 @@ interface TeamUser {
 }
 
 const initialUsers: TeamUser[] = [
-  { id: "1", name: "Admin Global", email: "admin@sistema.com", role: "admin", phone: "(11) 99999-9999" },
-  { id: "2", name: "Operador Padrão", email: "operador@sistema.com", role: "operator", phone: "(11) 98888-8888" },
+  { id: "admin-1", name: "Admin Global", email: "admin@sistema.com", role: "admin", phone: "(11) 99999-9999" },
+  { id: "op-1", name: "Operador Padrão", email: "operador@sistema.com", role: "operator", phone: "(11) 98888-8888" },
 ];
 
 function UsersComponent() {
@@ -55,6 +56,7 @@ function UsersComponent() {
   const [users, setUsers] = useState<TeamUser[]>(initialUsers);
   const [isOpen, setIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
+  const [statuses, setStatuses] = useState<Record<string, { status: string }>>({});
   
   // Form states
   const [newName, setNewName] = useState("");
@@ -68,6 +70,17 @@ function UsersComponent() {
       navigate({ to: "/" });
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    const updateStatuses = () => {
+      const saved = JSON.parse(localStorage.getItem("operator_statuses") || "{}");
+      setStatuses(saved);
+    };
+
+    updateStatuses();
+    const interval = setInterval(updateStatuses, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (editingUser) {
@@ -121,7 +134,7 @@ function UsersComponent() {
   };
 
   const handleDelete = (id: string) => {
-    if (id === "1") {
+    if (id === "admin-1") {
       toast.error("Não é possível excluir o Admin Global.");
       return;
     }
@@ -207,6 +220,7 @@ function UsersComponent() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                <TableHead>Status</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>E-mail</TableHead>
                 <TableHead>Telefone</TableHead>
@@ -215,36 +229,45 @@ function UsersComponent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u) => (
-                <TableRow key={u.id} className="dark:border-slate-800">
-                  <TableCell className="font-medium">{u.name}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>{u.phone}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5">
-                      {u.role === "admin" ? (
-                        <Shield className="h-3.5 w-3.5 text-indigo-600" />
-                      ) : (
-                        <UserCircle className="h-3.5 w-3.5 text-slate-400" />
-                      )}
-                      <span className="capitalize">{u.role === "admin" ? "Administrador" : "Operador"}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        setEditingUser(u);
-                        setIsOpen(true);
-                      }}>
-                        <Edit className="h-4 w-4 text-slate-500" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {users.map((u) => {
+                const isOnline = statuses[u.id]?.status === "online";
+                return (
+                  <TableRow key={u.id} className="dark:border-slate-800">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Circle className={cn("h-3 w-3 fill-current", isOnline ? "text-green-500" : "text-slate-300")} />
+                        <span className="text-xs font-medium">{isOnline ? "Online" : "Offline"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{u.name}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>{u.phone}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        {u.role === "admin" ? (
+                          <Shield className="h-3.5 w-3.5 text-indigo-600" />
+                        ) : (
+                          <UserCircle className="h-3.5 w-3.5 text-slate-400" />
+                        )}
+                        <span className="capitalize">{u.role === "admin" ? "Administrador" : "Operador"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setEditingUser(u);
+                          setIsOpen(true);
+                        }}>
+                          <Edit className="h-4 w-4 text-slate-500" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
@@ -252,4 +275,5 @@ function UsersComponent() {
     </DashboardLayout>
   );
 }
+
 
