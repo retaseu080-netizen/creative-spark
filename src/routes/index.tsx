@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { useAuth } from "../hooks/use-auth";
+import { CategorySection } from "../components/dashboard/category-section";
 import { 
   Users, 
   Receipt, 
@@ -14,8 +14,6 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardComponent() {
-  const { user } = useAuth();
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -23,6 +21,9 @@ function DashboardComponent() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
           <p className="text-slate-500">Bem-vindo ao seu painel de gerenciamento.</p>
         </div>
+
+        {/* Sistema de Categorias Ocultas (Condicional) */}
+        <CategorySection />
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -70,3 +71,4 @@ function DashboardComponent() {
     </DashboardLayout>
   );
 }
+
