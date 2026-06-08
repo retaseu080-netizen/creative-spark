@@ -24,7 +24,8 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { useWebhook } from "../hooks/use-webhook";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, UserPlus, Edit, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, UserPlus, Edit, Trash2, CalendarCheck } from "lucide-react";
+import { format, addMonths } from "date-fns";
 
 export const Route = createFileRoute("/clientes")({
   component: ClientsComponent,
@@ -36,6 +37,7 @@ interface Client {
   email: string;
   status: "Pendente" | "Pago";
   value: string;
+  dueDate?: string;
 }
 
 const initialClients: Client[] = [
@@ -50,6 +52,9 @@ function ClientsComponent() {
     return saved ? JSON.parse(saved) : initialClients;
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [nextDueDate, setNextDueDate] = useState("");
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { notifyPayment } = useWebhook();
 
@@ -74,12 +79,24 @@ function ClientsComponent() {
     }
   }, [editingClient]);
 
-  const handleManualPayment = async (clientId: string) => {
+  const openPaymentModal = (clientId: string) => {
+    setSelectedClientId(clientId);
+    const nextDate = addMonths(new Date(), 1);
+    setNextDueDate(format(nextDate, "dd/MM/yyyy"));
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedClientId) return;
+
     setClients(prev => prev.map(c => 
-      c.id === clientId ? { ...c, status: "Pago" } : c
+      c.id === selectedClientId ? { ...c, status: "Pago", dueDate: nextDueDate } : c
     ));
-    toast.success("Cobrança alterada para Pago.");
-    await notifyPayment(clientId);
+
+    toast.success(`Cobrança alterada para Pago. Próximo vencimento: ${nextDueDate}`);
+    await notifyPayment(selectedClientId, nextDueDate);
+    setIsPaymentModalOpen(false);
+    setSelectedClientId(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -88,11 +105,12 @@ function ClientsComponent() {
       setClients(clients.map(c => c.id === editingClient.id ? { ...c, name, email, value } : c));
       toast.success("Cliente atualizado!");
     } else {
+      const numValue = parseFloat(value.replace(",", "."));
       const newClient: Client = {
         id: Math.random().toString(36).substr(2, 9),
         name,
         email,
-        value: `R$ ${parseFloat(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        value: isNaN(numValue) ? value : `R$ ${numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         status: "Pendente"
       };
       setClients([...clients, newClient]);
@@ -142,7 +160,7 @@ function ClientsComponent() {
                   <Input id="c-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="c-value">Valor da Cobrança (apenas números)</Label>
+                  <Label htmlFor="c-value">Valor da Cobrança (ex: 150.00)</Label>
                   <Input id="c-value" required value={value.replace("R$ ", "")} onChange={e => setValue(e.target.value)} />
                 </div>
                 <DialogFooter className="pt-4">
@@ -154,6 +172,35 @@ function ClientsComponent() {
             </DialogContent>
           </Dialog>
         </div>
+
+        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarCheck className="h-5 w-5 text-primary" />
+                Confirmar Pagamento
+              </DialogTitle>
+              <DialogDescription>
+                Informe a próxima data de vencimento para este cliente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="next-date">Próxima Data de Vencimento</Label>
+                <Input 
+                  id="next-date" 
+                  value={nextDueDate} 
+                  onChange={e => setNextDueDate(e.target.value)}
+                  placeholder="dd/mm/aaaa"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancelar</Button>
+              <Button onClick={handleConfirmPayment}>Confirmar e Enviar Aviso</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
           <Table>
@@ -174,9 +221,16 @@ function ClientsComponent() {
                   <TableCell>{client.value}</TableCell>
                   <TableCell>
                     {client.status === "Pago" ? (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 flex w-fit items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" /> Pago
-                      </Badge>
+                      <div className="space-y-1">
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 flex w-fit items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Pago
+                        </Badge>
+                        {client.dueDate && (
+                          <div className="text-[10px] text-muted-foreground px-1">
+                            Prox: {client.dueDate}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-400 flex w-fit items-center gap-1">
                         <Clock className="h-3 w-3" /> Pendente
@@ -190,7 +244,7 @@ function ClientsComponent() {
                           size="sm" 
                           variant="ghost" 
                           className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-2"
-                          onClick={() => handleManualPayment(client.id)}
+                          onClick={() => openPaymentModal(client.id)}
                         >
                           Pago Manual
                         </Button>
@@ -215,4 +269,3 @@ function ClientsComponent() {
     </DashboardLayout>
   );
 }
-
