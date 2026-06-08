@@ -29,7 +29,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "../components/ui/select";
-import { UserPlus, Shield, UserCircle } from "lucide-react";
+import { UserPlus, Shield, UserCircle, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/usuarios")({
@@ -54,6 +54,7 @@ function UsersComponent() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<TeamUser[]>(initialUsers);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
   
   // Form states
   const [newName, setNewName] = useState("");
@@ -62,14 +63,28 @@ function UsersComponent() {
   const [newRole, setNewRole] = useState<"admin" | "operator">("operator");
   const [newPhone, setNewPhone] = useState("");
 
-  // RBAC Check
   useEffect(() => {
     if (user && user.role !== "admin") {
       navigate({ to: "/" });
     }
   }, [user, navigate]);
 
-  // Mask function for Brazilian phone
+  useEffect(() => {
+    if (editingUser) {
+      setNewName(editingUser.name);
+      setNewEmail(editingUser.email);
+      setNewRole(editingUser.role);
+      setNewPhone(editingUser.phone);
+      setNewPassword("");
+    } else {
+      setNewName("");
+      setNewEmail("");
+      setNewRole("operator");
+      setNewPhone("");
+      setNewPassword("");
+    }
+  }, [editingUser]);
+
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, "");
     if (numbers.length <= 11) {
@@ -85,25 +100,33 @@ function UsersComponent() {
     setNewPhone(formatPhone(e.target.value));
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newUser: TeamUser = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newName,
-      email: newEmail,
-      role: newRole,
-      phone: newPhone
-    };
-    
-    setUsers([...users, newUser]);
+    if (editingUser) {
+      setUsers(users.map(u => u.id === editingUser.id ? { ...u, name: newName, email: newEmail, role: newRole, phone: newPhone } : u));
+      toast.success("Usuário atualizado com sucesso!");
+    } else {
+      const newUser: TeamUser = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: newName,
+        email: newEmail,
+        role: newRole,
+        phone: newPhone
+      };
+      setUsers([...users, newUser]);
+      toast.success("Usuário adicionado com sucesso!");
+    }
     setIsOpen(false);
-    toast.success("Usuário adicionado com sucesso!");
-    
-    // Reset fields
-    setNewName("");
-    setNewEmail("");
-    setNewPassword("");
-    setNewPhone("");
+    setEditingUser(null);
+  };
+
+  const handleDelete = (id: string) => {
+    if (id === "1") {
+      toast.error("Não é possível excluir o Admin Global.");
+      return;
+    }
+    setUsers(users.filter(u => u.id !== id));
+    toast.success("Usuário removido.");
   };
 
   if (user?.role !== "admin") return null;
@@ -113,11 +136,14 @@ function UsersComponent() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Gerenciar Equipe</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Gerenciar Equipe</h1>
             <p className="text-slate-500">Controle o acesso e os níveis de permissão dos colaboradores.</p>
           </div>
           
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <Dialog open={isOpen} onOpenChange={(val) => {
+            setIsOpen(val);
+            if (!val) setEditingUser(null);
+          }}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
                 <UserPlus className="h-4 w-4" /> Adicionar Usuário
@@ -125,12 +151,12 @@ function UsersComponent() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Novo Integrante</DialogTitle>
+                <DialogTitle>{editingUser ? "Editar Usuário" : "Novo Integrante"}</DialogTitle>
                 <DialogDescription>
-                  Preencha os dados abaixo para criar o acesso.
+                  Preencha os dados abaixo para {editingUser ? "atualizar" : "criar"} o acesso.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleAddUser} className="space-y-4 py-4">
+              <form onSubmit={handleSubmit} className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome Completo</Label>
                   <Input id="name" required value={newName} onChange={e => setNewName(e.target.value)} />
@@ -139,10 +165,12 @@ function UsersComponent() {
                   <Label htmlFor="email">E-mail</Label>
                   <Input id="email" type="email" required value={newEmail} onChange={e => setNewEmail(e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input id="password" type="password" required value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                </div>
+                {!editingUser && (
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input id="password" type="password" required value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="role">Nível de Acesso</Label>
                   <Select value={newRole} onValueChange={(val: any) => setNewRole(val)}>
@@ -165,27 +193,30 @@ function UsersComponent() {
                     onChange={handlePhoneChange} 
                   />
                 </div>
-                <DialogFooter className="pt-4">
-                  <Button type="submit" className="w-full">Cadastrar Usuário</Button>
+                <DialogFooter className="pt-4 gap-2 sm:gap-0">
+                  <Button type="submit" className="flex-1">
+                    {editingUser ? "Salvar Alterações" : newRole === "admin" ? "Adicionar Admin" : "Adicionar Operador"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
-        <div className="rounded-md border bg-white">
+        <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                 <TableHead>Nome</TableHead>
                 <TableHead>E-mail</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Nível</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((u) => (
-                <TableRow key={u.id}>
+                <TableRow key={u.id} className="dark:border-slate-800">
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell>{u.phone}</TableCell>
@@ -199,6 +230,19 @@ function UsersComponent() {
                       <span className="capitalize">{u.role === "admin" ? "Administrador" : "Operador"}</span>
                     </div>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        setEditingUser(u);
+                        setIsOpen(true);
+                      }}>
+                        <Edit className="h-4 w-4 text-slate-500" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -208,3 +252,4 @@ function UsersComponent() {
     </DashboardLayout>
   );
 }
+
