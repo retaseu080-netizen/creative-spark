@@ -4,8 +4,10 @@ import { useNavigate } from "@tanstack/react-router";
 export type Role = "admin" | "operator";
 
 export interface User {
+  id: string;
   email: string;
   role: Role;
+  name: string;
 }
 
 interface AuthContextType {
@@ -23,30 +25,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const saved = localStorage.getItem("auth_user");
-    if (saved) setUser(JSON.parse(saved));
+    if (saved) {
+      const parsedUser = JSON.parse(saved);
+      setUser(parsedUser);
+      updateStatus(parsedUser.id, "online");
+    }
+
+    const handleBeforeUnload = () => {
+      const currentUser = localStorage.getItem("auth_user");
+      if (currentUser) {
+        const parsed = JSON.parse(currentUser);
+        updateStatus(parsed.id, "offline");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  const updateStatus = (userId: string, status: "online" | "offline") => {
+    const statuses = JSON.parse(localStorage.getItem("operator_statuses") || "{}");
+    statuses[userId] = { status, lastSeen: Date.now() };
+    localStorage.setItem("operator_statuses", JSON.stringify(statuses));
+  };
+
   const login = (email: string, password: string) => {
-    // Credencial padrão: admin@sistema.com / admin123
+    let auth: User | null = null;
     if (email === "admin@sistema.com" && password === "admin123") {
-      const auth = { email, role: "admin" as Role };
+      auth = { id: "admin-1", email, role: "admin", name: "Admin Global" };
+    } else if (email === "operador@sistema.com" && password === "op123") {
+      auth = { id: "op-1", email, role: "operator", name: "Operador Padrão" };
+    }
+
+    if (auth) {
       setUser(auth);
       localStorage.setItem("auth_user", JSON.stringify(auth));
+      updateStatus(auth.id, "online");
       navigate({ to: "/" });
       return true;
-    }
-    // Operador demo: operador@sistema.com / op123
-    if (email === "operador@sistema.com" && password === "op123") {
-        const auth = { email, role: "operator" as Role };
-        setUser(auth);
-        localStorage.setItem("auth_user", JSON.stringify(auth));
-        navigate({ to: "/" });
-        return true;
     }
     return false;
   };
 
   const logout = () => {
+    if (user) updateStatus(user.id, "offline");
     setUser(null);
     localStorage.removeItem("auth_user");
     navigate({ to: "/login" });
@@ -64,3 +86,4 @@ export const useAuth = () => {
   if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 };
+
