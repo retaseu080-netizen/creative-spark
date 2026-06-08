@@ -20,7 +20,8 @@ function SettingsComponent() {
   const { url, saveUrl, testConnection } = useWebhook();
   
   const [alertMsg, setAlertMsg] = useState(() => localStorage.getItem("msg_alert") || "Olá! Identificamos uma cobrança pendente em seu nome. Por favor, regularize clicando no link abaixo.");
-  const [thanksMsg, setThanksMsg] = useState(() => localStorage.getItem("msg_thanks") || "Obrigado! Seu pagamento foi confirmado com sucesso.");
+  const [thanksMsg, setThanksMsg] = useState(() => localStorage.getItem("msg_thanks") || "Obrigado pelo pagamento! Seu próximo vencimento será em {nova_data_vencimento}");
+
 
   const handleSaveMessages = () => {
     localStorage.setItem("msg_alert", alertMsg);
