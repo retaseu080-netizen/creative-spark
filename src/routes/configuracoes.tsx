@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/use-auth";
 import { useWebhook } from "../hooks/use-webhook";
 import { toast } from "sonner";
 import { useState } from "react";
-import { MessageSquare, Settings2 } from "lucide-react";
+import { MessageSquare, Settings2, Lock, UserCog } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
   component: SettingsComponent,
