@@ -137,6 +137,21 @@ function SettingsComponent() {
                   Testar Conexão de Cobrança
                 </Button>
               </div>
+
+              {/* 3. Regras de Automação Visual */}
+              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Regras de Automação Ativas</h4>
+                <div className="grid gap-3 sm:grid-cols-2">
+                   <div className="flex items-center gap-2 p-2 rounded-md bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20">
+                      <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                      <span className="text-[11px] font-medium text-orange-700 dark:text-orange-400">Alerta 3 Dias Antes (Pendente)</span>
+                   </div>
+                   <div className="flex items-center gap-2 p-2 rounded-md bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+                      <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-[11px] font-medium text-red-700 dark:text-red-400">Cobrança 5 Dias Após (Vencido)</span>
+                   </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

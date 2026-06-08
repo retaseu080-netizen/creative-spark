@@ -47,6 +47,35 @@ export function useWebhook() {
     }
   };
 
-  return { url, saveUrl, testConnection, notifyPayment };
+  const notifyStatusChange = async (clientId: string, status: "PENDING" | "OVERDUE_ALERT", daysInfo: string) => {
+    if (!url) return;
+    
+    try {
+      const message = status === "PENDING" 
+        ? `Alerta Antecipado: Faltam ${daysInfo} para o vencimento.`
+        : `Cobrança de Atraso: Cliente está vencido há ${daysInfo}.`;
+
+      console.log(`Disparando webhook automático (${status}) para cliente ${clientId}: ${url}`);
+      
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          event: status, 
+          clientId, 
+          message,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(e => console.error("Webhook auto fallback error:", e));
+      
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
+  return { url, saveUrl, testConnection, notifyPayment, notifyStatusChange };
 }
+
 

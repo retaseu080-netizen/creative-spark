@@ -8,8 +8,9 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { parse, isBefore, addDays, differenceInDays } from "date-fns";
+import { parse, isBefore, addDays, differenceInDays, isToday } from "date-fns";
 import { AlertCircle, Clock } from "lucide-react";
+import { useWebhook } from "../hooks/use-webhook";
 
 export const Route = createFileRoute("/")({
   component: DashboardComponent,
@@ -22,10 +23,12 @@ interface Client {
   status: "Pendente" | "Pago";
   value: string;
   dueDate?: string;
+  lastAutoTrigger?: string; // Para evitar disparos duplicados no mesmo dia
 }
 
 function DashboardComponent() {
   const [clients, setClients] = useState<Client[]>([]);
+  const { notifyStatusChange } = useWebhook();
 
   useEffect(() => {
     const updateClients = () => {
@@ -33,23 +36,38 @@ function DashboardComponent() {
       if (saved) {
         const parsedClients: Client[] = JSON.parse(saved);
         const today = new Date();
+        let hasChanges = false;
 
-        // 1. Regra de Atualização Antecipada: Rastrear e mover para 'Pendente' faltando 3 dias
         const updatedClients = parsedClients.map(client => {
-          if (client.status === "Pago" && client.dueDate) {
+          if (client.dueDate) {
             const dueDate = parse(client.dueDate, "dd/MM/yyyy", new Date());
             const daysToDue = differenceInDays(dueDate, today);
-            
-            if (daysToDue <= 3 && daysToDue >= 0) {
-              return { ...client, status: "Pendente" as const };
+            const daysOverdue = differenceInDays(today, dueDate);
+
+            // 1. Alerta Antecipado (Exatamente 3 Dias Antes)
+            if (daysToDue === 3 && client.status === "Pago" && client.lastAutoTrigger !== `pending_3d_${client.id}_${today.toDateString()}`) {
+              notifyStatusChange(client.id, "PENDING", "3 dias");
+              hasChanges = true;
+              return { ...client, status: "Pendente" as const, lastAutoTrigger: `pending_3d_${client.id}_${today.toDateString()}` };
+            }
+
+            // 2. Cobrança de Atraso (Exatamente 5 Dias Depois)
+            if (daysOverdue === 5 && client.status === "Pendente" && client.lastAutoTrigger !== `overdue_5d_${client.id}_${today.toDateString()}`) {
+               notifyStatusChange(client.id, "OVERDUE_ALERT", "5 dias");
+               hasChanges = true;
+               return { ...client, lastAutoTrigger: `overdue_5d_${client.id}_${today.toDateString()}` };
             }
           }
           return client;
         });
 
+        if (hasChanges) {
+            localStorage.setItem("app_clients", JSON.stringify(updatedClients));
+        }
         setClients(updatedClients);
       }
     };
+
 
     updateClients();
     const interval = setInterval(updateClients, 60000); // Check every minute
