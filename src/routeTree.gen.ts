@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
+import { Route as SimuladorWhatsappRouteImport } from './routes/simulador-whatsapp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimuladorWhatsappRoute = SimuladorWhatsappRouteImport.update({
+  id: '/simulador-whatsapp',
+  path: '/simulador-whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/login': typeof LoginRoute
+  '/simulador-whatsapp': typeof SimuladorWhatsappRoute
   '/usuarios': typeof UsuariosRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/login': typeof LoginRoute
+  '/simulador-whatsapp': typeof SimuladorWhatsappRoute
   '/usuarios': typeof UsuariosRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,34 @@ export interface FileRoutesById {
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/login': typeof LoginRoute
+  '/simulador-whatsapp': typeof SimuladorWhatsappRoute
   '/usuarios': typeof UsuariosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clientes' | '/configuracoes' | '/login' | '/usuarios'
+  fullPaths:
+    | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/login'
+    | '/simulador-whatsapp'
+    | '/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clientes' | '/configuracoes' | '/login' | '/usuarios'
-  id: '__root__' | '/' | '/clientes' | '/configuracoes' | '/login' | '/usuarios'
+  to:
+    | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/login'
+    | '/simulador-whatsapp'
+    | '/usuarios'
+  id:
+    | '__root__'
+    | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/login'
+    | '/simulador-whatsapp'
+    | '/usuarios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +104,7 @@ export interface RootRouteChildren {
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   LoginRoute: typeof LoginRoute
+  SimuladorWhatsappRoute: typeof SimuladorWhatsappRoute
   UsuariosRoute: typeof UsuariosRoute
 }
 
@@ -86,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/usuarios'
       preLoaderRoute: typeof UsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulador-whatsapp': {
+      id: '/simulador-whatsapp'
+      path: '/simulador-whatsapp'
+      fullPath: '/simulador-whatsapp'
+      preLoaderRoute: typeof SimuladorWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -124,8 +160,19 @@ const rootRouteChildren: RootRouteChildren = {
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   LoginRoute: LoginRoute,
+  SimuladorWhatsappRoute: SimuladorWhatsappRoute,
   UsuariosRoute: UsuariosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
