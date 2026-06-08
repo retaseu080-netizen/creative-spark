@@ -36,23 +36,28 @@ interface DashboardMetricsProps {
 export function DashboardMetrics({ clients }: DashboardMetricsProps) {
   const [period, setPeriod] = useState<"day" | "month" | "year">("month");
 
-  const stats = useMemo(() => {
-    const pending = clients
-      .filter(c => c.status === "Pendente")
-      .reduce((acc, curr) => acc + parseFloat(curr.value.replace("R$ ", "").replace(".", "").replace(",", ".")), 0);
+    const stats = useMemo(() => {
+    const today = new Date();
     
-    const profit = clients
-      .filter(c => c.status === "Pago")
-      .reduce((acc, curr) => acc + parseFloat(curr.value.replace("R$ ", "").replace(".", "").replace(",", ".")), 0);
+    let pendingValue = 0;
+    let profitValue = 0;
+
+    clients.forEach(c => {
+      const val = parseFloat(c.value.replace("R$ ", "").replace(".", "").replace(",", "."));
+      if (c.status === "Pago") {
+        profitValue += val;
+      } else {
+        pendingValue += val;
+      }
+    });
     
     const active = clients.length;
 
-    // Simulação de filtros de período (em um app real, filtraria as datas)
     const multiplier = period === "day" ? 0.05 : period === "year" ? 12 : 1;
     
     return {
-      pending: (pending * multiplier).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-      profit: (profit * multiplier).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      pending: (pendingValue * multiplier).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      profit: (profitValue * multiplier).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
       active: Math.floor(active * multiplier)
     };
   }, [clients, period]);
