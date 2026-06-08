@@ -182,27 +182,75 @@ function SettingsComponent() {
           </Card>
 
           {user?.role === "admin" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferências do Sistema</CardTitle>
-                <CardDescription>
-                  Configurações restritas aos administradores.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserCog className="h-5 w-5 text-primary" />
+                    Alterar Dados de Acesso
+                  </CardTitle>
+                  <CardDescription>
+                    Atualize o e-mail e a senha do administrador principal.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Nome da Organização</Label>
-                    <Input defaultValue="CobrançaSys Ltda" />
+                    <Label htmlFor="new-email">Novo E-mail do Admin</Label>
+                    <Input 
+                      id="new-email" 
+                      type="email" 
+                      placeholder="admin@exemplo.com"
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label>Fuso Horário</Label>
-                    <Input defaultValue="America/Sao_Paulo" />
+                    <Label htmlFor="new-password">Nova Senha</Label>
+                    <Input 
+                      id="new-password" 
+                      type="password"
+                      value={newAdminPassword}
+                      onChange={(e) => setNewAdminPassword(e.target.value)}
+                    />
                   </div>
-                </div>
-                <Button>Salvar Preferências</Button>
-              </CardContent>
-            </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+                    <Input 
+                      id="confirm-password" 
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={handleUpdateCredentials} className="w-full" variant="destructive">
+                    <Lock className="mr-2 h-4 w-4" />
+                    Salvar Novas Credenciais
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Preferências do Sistema</CardTitle>
+                  <CardDescription>
+                    Configurações restritas aos administradores.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nome da Organização</Label>
+                      <Input defaultValue="CobrançaSys Ltda" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Fuso Horário</Label>
+                      <Input defaultValue="America/Sao_Paulo" />
+                    </div>
+                  </div>
+                  <Button className="w-full">Salvar Preferências</Button>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
       </div>
