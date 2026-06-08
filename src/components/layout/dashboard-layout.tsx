@@ -9,10 +9,12 @@ import {
   UserSquare2, 
   LogOut,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
+
 
 interface SidebarProps {
   children: ReactNode;
@@ -37,11 +39,18 @@ export function DashboardLayout({ children }: SidebarProps) {
       roles: ["admin", "operator"],
     },
     {
+      title: "Simulador WhatsApp",
+      icon: MessageSquare,
+      to: "/simulador-whatsapp",
+      roles: ["admin", "operator"],
+    },
+    {
       title: "Gerenciar Equipe",
       icon: UserSquare2,
       to: "/usuarios",
       roles: ["admin"],
     },
+
     {
       title: "Configurações",
       icon: Settings,
