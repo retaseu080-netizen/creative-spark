@@ -110,9 +110,9 @@ function DashboardComponent() {
                         <TableBody>
                           {overdueClients.map(c => (
                             <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                              <TableCell className="py-2 pl-0 font-medium text-xs">{c.name}</TableCell>
+                              <TableCell className="py-2 pl-0 font-medium text-xs text-red-600">{c.name}</TableCell>
                               <TableCell className="py-2 text-right pr-0">
-                                <Badge variant="destructive" className="text-[10px] h-5">{c.dueDate}</Badge>
+                                <Badge variant="destructive" className="text-[10px] h-5 bg-red-600">{c.dueDate}</Badge>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -126,9 +126,9 @@ function DashboardComponent() {
               </Card>
 
               {/* Alertas de Pendentes (Próximos 3 dias) */}
-              <Card className="border-amber-100 dark:border-amber-900/30">
+              <Card className="border-orange-100 dark:border-orange-900/30">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold flex items-center gap-2 text-amber-600">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2 text-orange-600">
                     <Clock className="h-4 w-4" /> Vencimento Próximo
                   </CardTitle>
                 </CardHeader>
@@ -141,7 +141,7 @@ function DashboardComponent() {
                             <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
                               <TableCell className="py-2 pl-0 font-medium text-xs">{c.name}</TableCell>
                               <TableCell className="py-2 text-right pr-0">
-                                <Badge variant="outline" className="text-[10px] h-5 border-amber-200 text-amber-600">{c.dueDate}</Badge>
+                                <Badge variant="outline" className="text-[10px] h-5 border-orange-200 text-orange-600">{c.dueDate}</Badge>
                               </TableCell>
                             </TableRow>
                           ))}
