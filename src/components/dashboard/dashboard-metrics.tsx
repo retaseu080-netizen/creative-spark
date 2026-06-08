@@ -97,7 +97,7 @@ export function DashboardMetrics({ clients }: DashboardMetricsProps) {
           value={stats.pending} 
           icon={Receipt} 
           description="Valor total aguardando" 
-          color="bg-amber-100 text-amber-600"
+          color="bg-orange-100 text-orange-600"
         />
         <MetricCard 
           title="Lucro" 
