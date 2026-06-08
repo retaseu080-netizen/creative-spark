@@ -16,8 +16,12 @@ export const Route = createFileRoute("/configuracoes")({
 });
 
 function SettingsComponent() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { url, saveUrl, testConnection } = useWebhook();
+  
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   
   const [alertMsg, setAlertMsg] = useState(() => localStorage.getItem("msg_alert") || "Olá! Identificamos uma cobrança pendente em seu nome. Por favor, regularize clicando no link abaixo.");
   const [thanksMsg, setThanksMsg] = useState(() => localStorage.getItem("msg_thanks") || "Obrigado pelo pagamento! Seu próximo vencimento será em {nova_data_vencimento}");
