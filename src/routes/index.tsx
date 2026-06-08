@@ -3,7 +3,13 @@ import { DashboardLayout } from "../components/layout/dashboard-layout";
 import { CategorySection } from "../components/dashboard/category-section";
 import { DashboardMetrics } from "../components/dashboard/dashboard-metrics";
 import { BillingSimulator } from "../components/dashboard/billing-simulator";
-import { useState, useEffect } from "react";
+import { ClientStatusChart } from "../components/dashboard/client-status-chart";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { parse, isBefore, addDays, differenceInDays } from "date-fns";
+import { AlertCircle, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: DashboardComponent,
@@ -15,45 +21,150 @@ interface Client {
   email: string;
   status: "Pendente" | "Pago";
   value: string;
+  dueDate?: string;
 }
 
 function DashboardComponent() {
   const [clients, setClients] = useState<Client[]>([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("app_clients");
-    if (saved) setClients(JSON.parse(saved));
-    
-    // Listen for storage changes to update in real-time if multiple tabs are open
-    const handleStorage = () => {
-      const updated = localStorage.getItem("app_clients");
-      if (updated) setClients(JSON.parse(updated));
+    const updateClients = () => {
+      const saved = localStorage.getItem("app_clients");
+      if (saved) {
+        const parsedClients: Client[] = JSON.parse(saved);
+        const today = new Date();
+
+        // 1. Regra de Atualização Antecipada: Rastrear e mover para 'Pendente' faltando 3 dias
+        const updatedClients = parsedClients.map(client => {
+          if (client.status === "Pago" && client.dueDate) {
+            const dueDate = parse(client.dueDate, "dd/MM/yyyy", new Date());
+            const daysToDue = differenceInDays(dueDate, today);
+            
+            if (daysToDue <= 3 && daysToDue >= 0) {
+              return { ...client, status: "Pendente" as const };
+            }
+          }
+          return client;
+        });
+
+        setClients(updatedClients);
+      }
     };
+
+    updateClients();
+    const interval = setInterval(updateClients, 60000); // Check every minute
+    
+    const handleStorage = () => updateClients();
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
   }, []);
+
+  const overdueClients = useMemo(() => {
+    const today = new Date();
+    return clients.filter(c => {
+      if (c.status === "Pago" || !c.dueDate) return false;
+      const dueDate = parse(c.dueDate, "dd/MM/yyyy", new Date());
+      return isBefore(dueDate, today) && differenceInDays(today, dueDate) > 0;
+    });
+  }, [clients]);
+
+  const urgentClients = useMemo(() => {
+    const today = new Date();
+    return clients.filter(c => {
+      if (c.status === "Pago" || !c.dueDate) return false;
+      const dueDate = parse(c.dueDate, "dd/MM/yyyy", new Date());
+      const daysToDue = differenceInDays(dueDate, today);
+      return daysToDue >= 0 && daysToDue <= 3;
+    });
+  }, [clients]);
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard</h1>
-          <p className="text-slate-500">Bem-vindo ao seu painel de gerenciamento.</p>
+          <p className="text-slate-500">Monitoramento e métricas em tempo real.</p>
         </div>
 
-        {/* 1. Cards de Métricas em Tempo Real */}
         <DashboardMetrics clients={clients} />
 
-        <div className="grid gap-6 md:grid-cols-1">
-          {/* 2. Área de Simulação */}
-          <BillingSimulator />
-          
-          {/* Sistema de Categorias Ocultas */}
-          <CategorySection />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <BillingSimulator />
+            
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Alertas de Vencidos */}
+              <Card className="border-red-100 dark:border-red-900/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-600">
+                    <AlertCircle className="h-4 w-4" /> Clientes Vencidos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <div className="max-h-[200px] overflow-y-auto px-6">
+                    {overdueClients.length > 0 ? (
+                      <Table>
+                        <TableBody>
+                          {overdueClients.map(c => (
+                            <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <TableCell className="py-2 pl-0 font-medium text-xs">{c.name}</TableCell>
+                              <TableCell className="py-2 text-right pr-0">
+                                <Badge variant="destructive" className="text-[10px] h-5">{c.dueDate}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">Nenhuma fatura vencida.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Alertas de Pendentes (Próximos 3 dias) */}
+              <Card className="border-amber-100 dark:border-amber-900/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2 text-amber-600">
+                    <Clock className="h-4 w-4" /> Vencimento Próximo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0">
+                  <div className="max-h-[200px] overflow-y-auto px-6">
+                    {urgentClients.length > 0 ? (
+                      <Table>
+                        <TableBody>
+                          {urgentClients.map(c => (
+                            <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <TableCell className="py-2 pl-0 font-medium text-xs">{c.name}</TableCell>
+                              <TableCell className="py-2 text-right pr-0">
+                                <Badge variant="outline" className="text-[10px] h-5 border-amber-200 text-amber-600">{c.dueDate}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">Sem vencimentos próximos.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <ClientStatusChart clients={clients} />
+            <CategorySection />
+          </div>
         </div>
       </div>
     </DashboardLayout>
   );
 }
+
 
 
