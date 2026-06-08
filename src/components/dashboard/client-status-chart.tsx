@@ -35,9 +35,9 @@ export function ClientStatusChart({ clients }: ClientStatusChartProps) {
     });
 
     return [
-      { name: "Pagos", value: paid, color: "oklch(0.6 0.15 150)" },
-      { name: "Pendentes", value: pending, color: "oklch(0.7 0.15 80)" },
-      { name: "Vencidos", value: overdue, color: "oklch(0.5 0.2 25)" },
+      { name: "Pagos", value: paid, color: "#22c55e" }, // Verde
+      { name: "Pendentes", value: pending, color: "#f97316" }, // Laranja
+      { name: "Vencidos", value: overdue, color: "#ef4444" }, // Vermelho
     ].filter(d => d.value > 0);
   }, [clients]);
 

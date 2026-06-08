@@ -238,7 +238,7 @@ function ClientsComponent() {
                   <TableCell>
                     {client.status === "Pago" ? (
                       <div className="space-y-1">
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 flex w-fit items-center gap-1">
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 flex w-fit items-center gap-1 border-green-200">
                           <CheckCircle2 className="h-3 w-3" /> Pago
                         </Badge>
                         {client.dueDate && (
@@ -248,7 +248,7 @@ function ClientsComponent() {
                         )}
                       </div>
                     ) : (
-                      <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-400 flex w-fit items-center gap-1">
+                      <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900/50 dark:text-orange-400 flex w-fit items-center gap-1">
                         <Clock className="h-3 w-3" /> Pendente
                       </Badge>
                     )}
