@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../../hooks/use-auth";
 import { cn } from "../../lib/utils";
@@ -7,7 +7,9 @@ import {
   Users, 
   Settings, 
   UserSquare2, 
-  LogOut 
+  LogOut,
+  Menu,
+  X
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
@@ -19,6 +21,7 @@ interface SidebarProps {
 export function DashboardLayout({ children }: SidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
     {
@@ -52,11 +55,34 @@ export function DashboardLayout({ children }: SidebarProps) {
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      {/* Botão de Menu Flutuante (Hambúrguer) */}
+      <div className="fixed top-4 left-4 z-50">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="rounded-full shadow-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+        >
+          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {/* Overlay para fechar ao clicar fora (mobile/tablet feel) */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 dark:bg-black/40 z-30 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Oculta por Padrão */}
+      <aside className={cn(
+        "fixed left-0 top-0 z-40 h-screen w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-transform duration-300 ease-in-out",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <div className="flex h-full flex-col px-3 py-4">
-          <div className="flex items-center justify-between mb-10 px-2">
+          <div className="flex items-center justify-between mb-10 px-2 mt-2">
             <div className="text-2xl font-bold text-primary">CobrançaSys</div>
             <ThemeToggle />
           </div>
@@ -66,6 +92,7 @@ export function DashboardLayout({ children }: SidebarProps) {
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={() => setIsSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
                   location.pathname === item.to 
@@ -95,13 +122,14 @@ export function DashboardLayout({ children }: SidebarProps) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 pl-64">
-        <div className="p-8">
+      {/* Main content - Ajuste de padding dinâmico removido para manter tela 100% limpa */}
+      <main className="flex-1 w-full min-h-screen pt-16">
+        <div className="container mx-auto p-4 md:p-8 max-w-7xl">
           {children}
         </div>
       </main>
     </div>
   );
 }
+
 
