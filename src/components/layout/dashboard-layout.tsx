@@ -9,10 +9,12 @@ import {
   UserSquare2, 
   LogOut,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
+
 
 interface SidebarProps {
   children: ReactNode;
