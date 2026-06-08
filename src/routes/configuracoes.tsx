@@ -21,12 +21,28 @@ function SettingsComponent() {
   
   const [alertMsg, setAlertMsg] = useState(() => localStorage.getItem("msg_alert") || "Olá! Identificamos uma cobrança pendente em seu nome. Por favor, regularize clicando no link abaixo.");
   const [thanksMsg, setThanksMsg] = useState(() => localStorage.getItem("msg_thanks") || "Obrigado pelo pagamento! Seu próximo vencimento será em {nova_data_vencimento}");
+  const [supportNumber, setSupportNumber] = useState(() => localStorage.getItem("support_number") || "(11) 99999-9999");
 
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/^(\d{2})(\d)/g, "($1) $2")
+        .replace(/(\d{5})(\d)/, "$1-$2")
+        .substring(0, 15);
+    }
+    return value.substring(0, 15);
+  };
 
-  const handleSaveMessages = () => {
+  const handleSupportPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSupportNumber(formatPhone(e.target.value));
+  };
+
+  const handleSaveSettings = () => {
     localStorage.setItem("msg_alert", alertMsg);
     localStorage.setItem("msg_thanks", thanksMsg);
-    toast.success("Modelos de mensagens salvos!");
+    localStorage.setItem("support_number", supportNumber);
+    toast.success("Configurações salvas com sucesso!");
   };
 
   const handleTest = async () => {
@@ -47,7 +63,7 @@ function SettingsComponent() {
         </div>
 
         <div className="grid gap-6">
-          {/* Painel de Edição de Mensagens (Disparos) */}
+          {/* Painel de Edição de Mensagens e Suporte */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -77,7 +93,21 @@ function SettingsComponent() {
                   onChange={e => setThanksMsg(e.target.value)} 
                 />
               </div>
-              <Button onClick={handleSaveMessages}>Salvar Modelos</Button>
+
+              {user?.role === "admin" && (
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <Label htmlFor="support-phone">Número de WhatsApp do Suporte</Label>
+                  <Input 
+                    id="support-phone" 
+                    placeholder="(99) 99999-9999" 
+                    value={supportNumber} 
+                    onChange={handleSupportPhoneChange} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Este número será usado em todos os botões de suporte do sistema.</p>
+                </div>
+              )}
+
+              <Button onClick={handleSaveSettings}>Salvar Configurações</Button>
             </CardContent>
           </Card>
 

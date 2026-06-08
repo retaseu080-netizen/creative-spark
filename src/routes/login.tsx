@@ -27,8 +27,10 @@ function LoginComponent() {
   };
 
   const handleSupport = () => {
+    const rawNumber = localStorage.getItem("support_number") || "5511999999999";
+    const cleanNumber = rawNumber.replace(/\D/g, "");
     const text = encodeURIComponent("Olá! Estou na tela de login do painel e preciso de ajuda com o meu acesso.");
-    window.open(`https://wa.me/5511999999999?text=${text}`, "_blank");
+    window.open(`https://wa.me/${cleanNumber.startsWith("55") ? cleanNumber : "55" + cleanNumber}?text=${text}`, "_blank");
   };
 
   return (

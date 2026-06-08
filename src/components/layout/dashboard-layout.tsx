@@ -67,10 +67,12 @@ export function DashboardLayout({ children }: SidebarProps) {
   );
 
   const handleSupport = () => {
+    const rawNumber = localStorage.getItem("support_number") || "5511999999999";
+    const cleanNumber = rawNumber.replace(/\D/g, "");
     const text = isBlocked 
       ? "Olá, meu acesso foi restrito e preciso de liberação." 
       : "Olá, preciso de suporte no sistema.";
-    window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(text)}`, "_blank");
+    window.open(`https://wa.me/${cleanNumber.startsWith("55") ? cleanNumber : "55" + cleanNumber}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   if (isBlocked) {
