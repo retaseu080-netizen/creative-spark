@@ -49,6 +49,28 @@ function SettingsComponent() {
     toast.success("Configurações salvas com sucesso!");
   };
 
+  const handleUpdateCredentials = () => {
+    if (!newAdminEmail || !newAdminPassword || !confirmPassword) {
+      toast.error("Todos os campos de credenciais são obrigatórios.");
+      return;
+    }
+
+    if (newAdminPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+
+    localStorage.setItem("admin_email", newAdminEmail);
+    localStorage.setItem("admin_password", newAdminPassword);
+    
+    toast.success("Credenciais atualizadas! Por favor, faça login novamente.");
+    
+    // Logout the user to force new login
+    setTimeout(() => {
+      logout();
+    }, 2000);
+  };
+
   const handleTest = async () => {
     const result = await testConnection();
     if (result.success) {
