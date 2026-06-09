@@ -24,8 +24,10 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { useWebhook } from "../hooks/use-webhook";
 import { toast } from "sonner";
-import { CheckCircle2, Clock, UserPlus, Edit, Trash2, CalendarCheck, MessageCircle } from "lucide-react";
+import { CheckCircle2, Clock, UserPlus, Edit, Trash2, CalendarCheck, MessageCircle, AlertCircle, Loader2 } from "lucide-react";
 import { format, addMonths } from "date-fns";
+import { cn } from "../lib/utils";
+
 
 export const Route = createFileRoute("/clientes")({
   component: ClientsComponent,
@@ -57,7 +59,13 @@ function ClientsComponent() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [nextDueDate, setNextDueDate] = useState("");
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const { notifyPayment } = useWebhook();
+  
+  // Loading and error states for individual row actions
+  const [rowLoading, setRowLoading] = useState<Record<string, "manual" | "alert" | null>>({});
+  const [rowStatus, setRowStatus] = useState<Record<string, "success" | "error" | null>>({});
+
+  const { notifyPayment, genericRequest } = useWebhook();
+
 
   // Form states
   const [name, setName] = useState("");
@@ -102,6 +110,71 @@ function ClientsComponent() {
     setIsPaymentModalOpen(false);
     setSelectedClientId(null);
   };
+
+  const handleManualPaymentAction = async (client: Client) => {
+    const actionKey = `${client.id}-manual`;
+    setRowLoading(prev => ({ ...prev, [client.id]: "manual" }));
+    setRowStatus(prev => ({ ...prev, [client.id]: null }));
+
+    const payload = {
+      status: 'pago',
+      cliente: client.name,
+      telefone: client.phone,
+      valor: client.value
+    };
+
+    const result = await genericRequest(payload);
+
+    if (result.success) {
+      setRowStatus(prev => ({ ...prev, [client.id]: "success" }));
+      toast.success(`Pagamento de ${client.name} processado via API.`);
+      
+      // Update local status too
+      setClients(prev => prev.map(c => 
+        c.id === client.id ? { ...c, status: "Pago" } : c
+      ));
+    } else {
+      setRowStatus(prev => ({ ...prev, [client.id]: "error" }));
+      toast.error(`Falha no webhook: ${result.error}`);
+    }
+
+    setRowLoading(prev => ({ ...prev, [client.id]: null }));
+    
+    // Clear status feedback after a delay
+    setTimeout(() => {
+      setRowStatus(prev => ({ ...prev, [client.id]: null }));
+    }, 3000);
+  };
+
+  const handleAlertAction = async (client: Client) => {
+    setRowLoading(prev => ({ ...prev, [client.id]: "alert" }));
+    setRowStatus(prev => ({ ...prev, [client.id]: null }));
+
+    const payload = {
+      status: 'pendente',
+      cliente: client.name,
+      telefone: client.phone,
+      valor: client.value,
+      diasAtraso: -3
+    };
+
+    const result = await genericRequest(payload);
+
+    if (result.success) {
+      setRowStatus(prev => ({ ...prev, [client.id]: "success" }));
+      toast.success(`Alerta de ${client.name} disparado com sucesso.`);
+    } else {
+      setRowStatus(prev => ({ ...prev, [client.id]: "error" }));
+      toast.error(`Erro ao disparar alerta: ${result.error}`);
+    }
+
+    setRowLoading(prev => ({ ...prev, [client.id]: null }));
+    
+    setTimeout(() => {
+      setRowStatus(prev => ({ ...prev, [client.id]: null }));
+    }, 3000);
+  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,13 +339,47 @@ function ClientsComponent() {
                       {client.status === "Pendente" && (
                         <Button 
                           size="sm" 
-                          variant="ghost" 
-                          className="text-primary hover:text-primary hover:bg-primary/10 h-8 px-2"
-                          onClick={() => openPaymentModal(client.id)}
+                          variant="outline" 
+                          disabled={!!rowLoading[client.id]}
+                          className={cn(
+                            "h-8 px-2 text-[11px] font-bold border-primary text-primary hover:bg-primary/10 transition-colors",
+                            rowStatus[client.id] === "success" && "bg-green-500 text-white border-green-600 hover:bg-green-600",
+                            rowStatus[client.id] === "error" && "bg-red-500 text-white border-red-600 hover:bg-red-600"
+                          )}
+                          onClick={() => handleManualPaymentAction(client)}
                         >
+                          {rowLoading[client.id] === "manual" ? (
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                          ) : rowStatus[client.id] === "success" ? (
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                          ) : rowStatus[client.id] === "error" ? (
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                          ) : null}
                           Pago Manual
                         </Button>
                       )}
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled={!!rowLoading[client.id]}
+                        className={cn(
+                          "h-8 px-2 text-[11px] font-bold border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors",
+                          rowStatus[client.id] === "success" && "bg-green-500 text-white border-green-600 hover:bg-green-600",
+                          rowStatus[client.id] === "error" && "bg-red-500 text-white border-red-600 hover:bg-red-600"
+                        )}
+                        onClick={() => handleAlertAction(client)}
+                      >
+                        {rowLoading[client.id] === "alert" ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : rowStatus[client.id] === "success" ? (
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                        ) : rowStatus[client.id] === "error" ? (
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                        ) : null}
+                        Disparar Alerta
+                      </Button>
+
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                         setEditingClient(client);
                         setIsOpen(true);
