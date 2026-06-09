@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { toast } from "sonner";
+
 
 export function useWebhook() {
   const [url, setUrl] = useState(() => localStorage.getItem("webhook_url") || "");
@@ -75,7 +77,33 @@ export function useWebhook() {
     }
   };
 
-  return { url, saveUrl, testConnection, notifyPayment, notifyStatusChange };
+  const genericRequest = async (payload: any) => {
+    if (!url) {
+      toast.error("Webhook não configurado.");
+      return { success: false, error: "URL não configurada" };
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        return { success: true };
+      } else {
+        const errorText = await response.text();
+        return { success: false, error: `Erro ${response.status}: ${errorText || "Sem resposta do servidor"}` };
+      }
+    } catch (error: any) {
+      console.error("Webhook error:", error);
+      return { success: false, error: error.message || "Erro de conexão/CORS" };
+    }
+  };
+
+  return { url, saveUrl, testConnection, notifyPayment, notifyStatusChange, genericRequest };
 }
+
 
 
