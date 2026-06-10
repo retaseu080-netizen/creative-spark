@@ -42,7 +42,6 @@ export function DashboardLayout({ children }: SidebarProps) {
       to: "/clientes",
       roles: ["admin", "operator"],
     },
-    },
     {
       title: "Gerenciar Equipe",
       icon: UserSquare2,
