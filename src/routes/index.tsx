@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
 // CategorySection removed
 import { DashboardMetrics } from "../components/dashboard/dashboard-metrics";
-import { BillingSimulator } from "../components/dashboard/billing-simulator";
+// BillingSimulator removed
 import { ClientStatusChart } from "../components/dashboard/client-status-chart";
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
