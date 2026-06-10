@@ -79,63 +79,63 @@ function SettingsComponent() {
       toast.error(result.message);
     }
   };
-1: 
-2:   const handleExportBackup = () => {
-3:     const backupData = {
-4:       app_clients: JSON.parse(localStorage.getItem("app_clients") || "[]"),
-5:       operator_statuses: JSON.parse(localStorage.getItem("operator_statuses") || "{}"),
-6:       webhook_url: localStorage.getItem("webhook_url") || "",
-7:       msg_alert: localStorage.getItem("msg_alert") || "",
-8:       msg_thanks: localStorage.getItem("msg_thanks") || "",
-9:       support_number: localStorage.getItem("support_number") || "",
-10:       admin_email: localStorage.getItem("admin_email") || "",
-11:       theme: localStorage.getItem("theme") || "light",
-12:       export_date: new Date().toISOString()
-13:     };
-14: 
-15:     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
-16:     const url = URL.createObjectURL(blob);
-17:     const link = document.createElement("a");
-18:     link.href = url;
-19:     link.download = `backup_sistema_${new Date().toISOString().split('T')[0]}.json`;
-20:     document.body.appendChild(link);
-21:     link.click();
-22:     document.body.removeChild(link);
-23:     URL.revokeObjectURL(url);
-24:     toast.success("Backup exportado com sucesso!");
-25:   };
-26: 
-27:   const handleImportBackup = (event: React.ChangeEvent<HTMLInputElement>) => {
-28:     const file = event.target.files?.[0];
-29:     if (!file) return;
-30: 
-31:     const reader = new FileReader();
-32:     reader.onload = (e) => {
-33:       try {
-34:         const content = e.target?.result as string;
-35:         const data = JSON.parse(content);
-36: 
-37:         // Basic validation
-38:         if (!data.app_clients && !data.webhook_url) {
-39:           throw new Error("Formato de backup inválido.");
-40:         }
-41: 
-42:         // Update localStorage for each key if present in backup
-43:         Object.keys(data).forEach(key => {
-44:           if (key !== "export_date") {
-45:             const value = typeof data[key] === "string" ? data[key] : JSON.stringify(data[key]);
-46:             localStorage.setItem(key, value);
-47:           }
-48:         });
-49: 
-50:         toast.success("Backup importado! Reiniciando para aplicar alterações...");
-51:         setTimeout(() => window.location.reload(), 2000);
-52:       } catch (error: any) {
-53:         toast.error(`Erro ao importar backup: ${error.message}`);
-54:       }
-55:     };
-56:     reader.readAsText(file);
-57:   };
+
+  const handleExportBackup = () => {
+    const backupData = {
+      app_clients: JSON.parse(localStorage.getItem("app_clients") || "[]"),
+      operator_statuses: JSON.parse(localStorage.getItem("operator_statuses") || "{}"),
+      webhook_url: localStorage.getItem("webhook_url") || "",
+      msg_alert: localStorage.getItem("msg_alert") || "",
+      msg_thanks: localStorage.getItem("msg_thanks") || "",
+      support_number: localStorage.getItem("support_number") || "",
+      admin_email: localStorage.getItem("admin_email") || "",
+      theme: localStorage.getItem("theme") || "light",
+      export_date: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `backup_sistema_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Backup exportado com sucesso!");
+  };
+
+  const handleImportBackup = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+
+        // Basic validation
+        if (!data.app_clients && !data.webhook_url) {
+          throw new Error("Formato de backup inválido.");
+        }
+
+        // Update localStorage for each key if present in backup
+        Object.keys(data).forEach(key => {
+          if (key !== "export_date") {
+            const value = typeof data[key] === "string" ? data[key] : JSON.stringify(data[key]);
+            localStorage.setItem(key, value);
+          }
+        });
+
+        toast.success("Backup importado! Reiniciando para aplicar alterações...");
+        setTimeout(() => window.location.reload(), 2000);
+      } catch (error: any) {
+        toast.error(`Erro ao importar backup: ${error.message}`);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <DashboardLayout>
@@ -308,6 +308,47 @@ function SettingsComponent() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* Seção de Backup - Admin Only */}
+          {user?.role === "admin" && (
+            <Card className="border-dashed border-slate-300 dark:border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-slate-500" />
+                  Área de Backup
+                </CardTitle>
+                <CardDescription>
+                  Exporte ou importe todos os dados e configurações do sistema (Clientes, Webhooks, Mensagens).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button variant="outline" className="flex-1 gap-2" onClick={handleExportBackup}>
+                    <Download className="h-4 w-4" />
+                    Exportar Backup (.json)
+                  </Button>
+                  <div className="flex-1 relative">
+                    <Input 
+                      type="file" 
+                      accept=".json" 
+                      className="hidden" 
+                      id="import-backup" 
+                      onChange={handleImportBackup}
+                    />
+                    <Button variant="outline" className="w-full gap-2" asChild>
+                      <label htmlFor="import-backup" className="cursor-pointer">
+                        <Upload className="h-4 w-4" />
+                        Importar Backup (.json)
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+                <p className="mt-4 text-[10px] text-muted-foreground italic text-center">
+                  Atenção: A importação irá sobrescrever os dados atuais do sistema.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
