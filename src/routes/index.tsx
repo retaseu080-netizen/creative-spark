@@ -111,7 +111,7 @@ function DashboardComponent() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <BillingSimulator />
+            
             
             <div className="grid gap-6 md:grid-cols-2">
               {/* Alertas de Vencidos */}
