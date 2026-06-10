@@ -176,7 +176,6 @@ function DashboardComponent() {
 
           <div className="space-y-6">
             <ClientStatusChart clients={clients} />
-            <CategorySection />
           </div>
         </div>
       </div>
