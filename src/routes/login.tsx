@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { Button } from "../components/ui/button";
@@ -73,7 +73,10 @@ function LoginComponent() {
               </Button>
             </form>
             
-            <div className="mt-4 text-center">
+            <div className="mt-4 text-center space-y-2">
+              <Link to="/landing" className="block text-sm text-slate-500 hover:text-red-600 transition-colors">
+                Não tem uma conta? <span className="font-bold underline">Crie agora</span>
+              </Link>
               <button 
                 onClick={handleSupport}
                 className="text-sm text-slate-500 hover:text-primary transition-colors font-medium underline-offset-4 hover:underline"
