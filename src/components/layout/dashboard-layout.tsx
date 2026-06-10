@@ -106,7 +106,7 @@ export function DashboardLayout({ children }: SidebarProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+    <div className="flex min-h-screen bg-background transition-colors duration-300">
       {/* Botão de Menu Flutuante (Hambúrguer) e Suporte */}
       <div className="fixed top-4 left-4 z-50 flex items-center gap-2">
         <Button 
@@ -138,7 +138,7 @@ export function DashboardLayout({ children }: SidebarProps) {
 
       {/* Sidebar Oculta por Padrão */}
       <aside className={cn(
-        "fixed left-0 top-0 z-40 h-screen w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-transform duration-300 ease-in-out",
+        "fixed left-0 top-0 z-40 h-screen w-64 border-r border-border bg-card transition-transform duration-300 ease-in-out",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex h-full flex-col px-3 py-4">
