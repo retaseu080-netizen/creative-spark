@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
 // CategorySection removed
 import { DashboardMetrics } from "../components/dashboard/dashboard-metrics";
-import { BillingSimulator } from "../components/dashboard/billing-simulator";
+// BillingSimulator removed
 import { ClientStatusChart } from "../components/dashboard/client-status-chart";
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
@@ -111,7 +111,7 @@ function DashboardComponent() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <BillingSimulator />
+            
             
             <div className="grid gap-6 md:grid-cols-2">
               {/* Alertas de Vencidos */}

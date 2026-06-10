@@ -43,12 +43,6 @@ export function DashboardLayout({ children }: SidebarProps) {
       roles: ["admin", "operator"],
     },
     {
-      title: "Simulador WhatsApp",
-      icon: MessageSquare,
-      to: "/simulador-whatsapp",
-      roles: ["admin", "operator"],
-    },
-    {
       title: "Gerenciar Equipe",
       icon: UserSquare2,
       to: "/usuarios",
