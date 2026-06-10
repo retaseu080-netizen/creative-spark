@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
-import { CategorySection } from "../components/dashboard/category-section";
+// CategorySection removed
 import { DashboardMetrics } from "../components/dashboard/dashboard-metrics";
 import { BillingSimulator } from "../components/dashboard/billing-simulator";
 import { ClientStatusChart } from "../components/dashboard/client-status-chart";
