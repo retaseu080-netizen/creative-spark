@@ -53,7 +53,10 @@ const initialUsers: TeamUser[] = [
 function UsersComponent() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [users, setUsers] = useState<TeamUser[]>(initialUsers);
+  const [users, setUsers] = useState<TeamUser[]>(() => {
+    const saved = localStorage.getItem("team_users");
+    return saved ? JSON.parse(saved) : initialUsers;
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
   const [statuses, setStatuses] = useState<Record<string, { status: string }>>({});
@@ -81,6 +84,10 @@ function UsersComponent() {
     const interval = setInterval(updateStatuses, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("team_users", JSON.stringify(users));
+  }, [users]);
 
   useEffect(() => {
     if (editingUser) {
