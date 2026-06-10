@@ -1,19 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
+import LandingPage from "./landing";
+import { useAuth } from "../hooks/use-auth";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
-// CategorySection removed
 import { DashboardMetrics } from "../components/dashboard/dashboard-metrics";
-// BillingSimulator removed
 import { ClientStatusChart } from "../components/dashboard/client-status-chart";
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { parse, isBefore, addDays, differenceInDays, isToday } from "date-fns";
+import { Table, TableBody, TableCell, TableRow } from "../components/ui/table";
+import { parse, isBefore, differenceInDays } from "date-fns";
 import { AlertCircle, Clock } from "lucide-react";
 import { useWebhook } from "../hooks/use-webhook";
 
 export const Route = createFileRoute("/")({
-  component: DashboardComponent,
+  component: HomeComponent,
 });
 
 interface Client {
@@ -23,7 +23,17 @@ interface Client {
   status: "Pendente" | "Pago";
   value: string;
   dueDate?: string;
-  lastAutoTrigger?: string; // Para evitar disparos duplicados no mesmo dia
+  lastAutoTrigger?: string;
+}
+
+function HomeComponent() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
+
+  return <DashboardComponent />;
 }
 
 function DashboardComponent() {
@@ -44,14 +54,12 @@ function DashboardComponent() {
             const daysToDue = differenceInDays(dueDate, today);
             const daysOverdue = differenceInDays(today, dueDate);
 
-            // 1. Alerta Antecipado (Exatamente 3 Dias Antes)
             if (daysToDue === 3 && client.status === "Pago" && client.lastAutoTrigger !== `pending_3d_${client.id}_${today.toDateString()}`) {
               notifyStatusChange(client.id, "PENDING", "3 dias");
               hasChanges = true;
               return { ...client, status: "Pendente" as const, lastAutoTrigger: `pending_3d_${client.id}_${today.toDateString()}` };
             }
 
-            // 2. Cobrança de Atraso (Exatamente 5 Dias Depois)
             if (daysOverdue === 5 && client.status === "Pendente" && client.lastAutoTrigger !== `overdue_5d_${client.id}_${today.toDateString()}`) {
                notifyStatusChange(client.id, "OVERDUE_ALERT", "5 dias");
                hasChanges = true;
@@ -68,9 +76,8 @@ function DashboardComponent() {
       }
     };
 
-
     updateClients();
-    const interval = setInterval(updateClients, 60000); // Check every minute
+    const interval = setInterval(updateClients, 60000);
     
     const handleStorage = () => updateClients();
     window.addEventListener('storage', handleStorage);
@@ -111,10 +118,7 @@ function DashboardComponent() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            
-            
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Alertas de Vencidos */}
               <Card className="border-red-100 dark:border-red-900/30">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-600">
@@ -143,7 +147,6 @@ function DashboardComponent() {
                 </CardContent>
               </Card>
 
-              {/* Alertas de Pendentes (Próximos 3 dias) */}
               <Card className="border-orange-100 dark:border-orange-900/30">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-bold flex items-center gap-2 text-orange-600">
@@ -182,6 +185,7 @@ function DashboardComponent() {
     </DashboardLayout>
   );
 }
+
 
 
 

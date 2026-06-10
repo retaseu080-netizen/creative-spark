@@ -74,7 +74,7 @@ function LoginComponent() {
             </form>
             
             <div className="mt-4 text-center space-y-2">
-              <Link to="/landing" className="block text-sm text-slate-500 hover:text-red-600 transition-colors">
+              <Link to="/" className="block text-sm text-slate-500 hover:text-red-600 transition-colors">
                 Não tem uma conta? <span className="font-bold underline">Crie agora</span>
               </Link>
               <button 
