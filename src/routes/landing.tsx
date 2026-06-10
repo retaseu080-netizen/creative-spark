@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { CheckCircle2, MessageSquare, PieChart, ShieldCheck, Globe, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, MessageSquare, PieChart, ShieldCheck, Globe, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/landing")({
@@ -104,7 +104,14 @@ export default function LandingPage() {
             
             <div className="w-full lg:w-1/2 px-4">
               <Card className="max-w-md mx-auto shadow-2xl border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden">
-                <CardHeader className="bg-white dark:bg-slate-900 pb-2 border-b border-slate-50 dark:border-slate-800">
+                <CardHeader className="bg-white dark:bg-slate-900 pb-2 border-b border-slate-50 dark:border-slate-800 relative">
+                  <Link 
+                    to="/" 
+                    className="absolute right-4 top-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
+                    title="Sair"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Link>
                   <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">Crie sua conta</CardTitle>
                   <CardDescription className="text-slate-500">
                     Preencha os dados abaixo e comece agora mesmo
