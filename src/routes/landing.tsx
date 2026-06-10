@@ -11,7 +11,7 @@ export const Route = createFileRoute("/landing")({
   component: LandingPage,
 });
 
-function LandingPage() {
+export default function LandingPage() {
   const [formData, setFormData] = useState({
     name: "",
     lastName: "",
