@@ -30,6 +30,9 @@ function LandingPage() {
     
     console.log("Form data:", { ...formData, phone: countryCode + formData.phone });
     toast.success("Conta criada com sucesso! Redirecionando...");
+    setTimeout(() => {
+      window.location.href = "/login";
+    }, 1500);
   };
 
   return (
