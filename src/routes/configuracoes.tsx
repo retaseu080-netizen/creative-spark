@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/use-auth";
 import { useWebhook } from "../hooks/use-webhook";
 import { toast } from "sonner";
 import { useState } from "react";
-import { MessageSquare, Settings2, Lock, UserCog } from "lucide-react";
+import { MessageSquare, Settings2, Lock, UserCog, Database, Download, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
   component: SettingsComponent,
@@ -79,6 +79,63 @@ function SettingsComponent() {
       toast.error(result.message);
     }
   };
+1: 
+2:   const handleExportBackup = () => {
+3:     const backupData = {
+4:       app_clients: JSON.parse(localStorage.getItem("app_clients") || "[]"),
+5:       operator_statuses: JSON.parse(localStorage.getItem("operator_statuses") || "{}"),
+6:       webhook_url: localStorage.getItem("webhook_url") || "",
+7:       msg_alert: localStorage.getItem("msg_alert") || "",
+8:       msg_thanks: localStorage.getItem("msg_thanks") || "",
+9:       support_number: localStorage.getItem("support_number") || "",
+10:       admin_email: localStorage.getItem("admin_email") || "",
+11:       theme: localStorage.getItem("theme") || "light",
+12:       export_date: new Date().toISOString()
+13:     };
+14: 
+15:     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+16:     const url = URL.createObjectURL(blob);
+17:     const link = document.createElement("a");
+18:     link.href = url;
+19:     link.download = `backup_sistema_${new Date().toISOString().split('T')[0]}.json`;
+20:     document.body.appendChild(link);
+21:     link.click();
+22:     document.body.removeChild(link);
+23:     URL.revokeObjectURL(url);
+24:     toast.success("Backup exportado com sucesso!");
+25:   };
+26: 
+27:   const handleImportBackup = (event: React.ChangeEvent<HTMLInputElement>) => {
+28:     const file = event.target.files?.[0];
+29:     if (!file) return;
+30: 
+31:     const reader = new FileReader();
+32:     reader.onload = (e) => {
+33:       try {
+34:         const content = e.target?.result as string;
+35:         const data = JSON.parse(content);
+36: 
+37:         // Basic validation
+38:         if (!data.app_clients && !data.webhook_url) {
+39:           throw new Error("Formato de backup inválido.");
+40:         }
+41: 
+42:         // Update localStorage for each key if present in backup
+43:         Object.keys(data).forEach(key => {
+44:           if (key !== "export_date") {
+45:             const value = typeof data[key] === "string" ? data[key] : JSON.stringify(data[key]);
+46:             localStorage.setItem(key, value);
+47:           }
+48:         });
+49: 
+50:         toast.success("Backup importado! Reiniciando para aplicar alterações...");
+51:         setTimeout(() => window.location.reload(), 2000);
+52:       } catch (error: any) {
+53:         toast.error(`Erro ao importar backup: ${error.message}`);
+54:       }
+55:     };
+56:     reader.readAsText(file);
+57:   };
 
   return (
     <DashboardLayout>
