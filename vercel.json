@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/public/hooks/cron-cobrancas",
-      "schedule": "0 8 * * *"
+      "path": "/api/cron-cobrancas",
+      "schedule": "0 5 * * *"
     }
   ]
 }
