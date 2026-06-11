@@ -18,8 +18,8 @@ export default async function handler(req: Request) {
     try {
       const { number, message } = await req.json();
 
-      // Endereço da VPS fornecido pelo usuário
-      const urlVPS = "http://204.157.108.182:3030/message/sendText/robson"; // Usando o IP completo que provavelmente foi cortado no prompt mas estava em contextos anteriores ou é o padrão esperado
+      // Endereço da VPS fornecido pelo usuário (Note: Este endereço parece incompleto, verifique se falta o último octeto ou porta)
+      const urlVPS = "http://204.157.108"; 
 
       const response = await fetch(urlVPS, {
         method: 'POST',
@@ -29,25 +29,31 @@ export default async function handler(req: Request) {
         },
         body: JSON.stringify({
           "number": number,
-          "options": { "delay": 1200, "presence": "composing" },
-          "textMessage": { "text": message }
+          "message": message
         })
       });
 
+      // Como o endereço pode estar incompleto, capturamos o erro de rede se ocorrer
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Erro na VPS:", errorText);
-        return new Response(JSON.stringify({ error: 'Erro ao enviar mensagem via VPS', details: errorText }), { status: 500, headers });
+        return new Response(JSON.stringify({ 
+          error: 'Erro ao enviar mensagem via VPS', 
+          status: response.status,
+          details: errorText 
+        }), { status: 500, headers });
       }
 
       return new Response(JSON.stringify({
         sucesso: true,
-        mensagem: "Mensagem enviada com sucesso!"
+        mensagem: "Mensagem enviada com sucesso para a VPS!"
       }), { status: 200, headers });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro interno:", error);
-      return new Response(JSON.stringify({ error: 'Erro interno ao processar requisição' }), { status: 500, headers });
+      return new Response(JSON.stringify({ 
+        error: 'Erro interno ao processar requisição', 
+        details: error.message 
+      }), { status: 500, headers });
     }
   }
 
