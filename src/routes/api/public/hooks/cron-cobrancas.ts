@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
           const { data: clients, error } = await supabaseAdmin
             .from('clients')
             .select('*, resale_settings!inner(pix_key, beneficiary_name)')
-            .in('status', ['pendente', 'atrasado']);
+            .in('status', ['pendente', 'atrasado', 'bloqueado']);
 
           if (error) throw error;
 
@@ -51,9 +51,15 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
             } else if (diffDays === 0) {
               message = `Seu vencimento é hoje! Faça o Pix para a chave: ${pixKey} no valor de ${client.value}. Beneficiário: ${beneficiaryName}`;
               shouldSend = true;
-            } else if (diffDaysOverdue === 5) {
-              message = `Aviso importante: Sua fatura está vencida há 5 dias. Por favor, regularize para evitar bloqueios.`;
-              shouldSend = true;
+            } else if (diffDaysOverdue >= 5) {
+              message = `Aviso importante: Sua fatura está vencida há ${diffDaysOverdue} dias. Seu acesso foi bloqueado. Por favor, regularize para reativar.`;
+              shouldSend = client.status !== 'bloqueado'; // Only send if not already blocked
+              
+              // Bloqueio automático
+              await supabaseAdmin
+                .from('clients')
+                .update({ status: 'bloqueado' })
+                .eq('id', client.id);
             }
 
             if (shouldSend) {
@@ -79,7 +85,7 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
                 status: vpsResponse.status
               });
 
-              if (diffDaysOverdue > 0 && client.status === 'pendente') {
+              if (diffDaysOverdue > 0 && diffDaysOverdue < 5 && client.status === 'pendente') {
                 await supabaseAdmin
                   .from('clients')
                   .update({ status: 'atrasado' })

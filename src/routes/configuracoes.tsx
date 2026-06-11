@@ -7,7 +7,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, Loader2 } from "lucide-react";
+import { Wallet, Loader2, Send, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
   component: SettingsComponent,
@@ -20,6 +20,8 @@ function SettingsComponent() {
   const [beneficiaryName, setBeneficiaryName] = useState("");
   const [resaleName, setResaleName] = useState("");
   const [settingsId, setSettingsId] = useState<string | null>(null);
+  const [testPhone, setTestPhone] = useState("");
+  const [testing, setTesting] = useState(false);
 
   const fetchSettings = async () => {
     setFetching(true);
@@ -76,6 +78,36 @@ function SettingsComponent() {
       toast.success("Configurações salvas com sucesso!");
     }
     setLoading(false);
+  };
+
+  const handleTestWhatsApp = async () => {
+    if (!testPhone) {
+      toast.error("Digite um número de telefone para testar.");
+      return;
+    }
+
+    setTesting(true);
+    try {
+      const response = await fetch("/api/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          number: testPhone,
+          message: "🚀 Teste de conexão: O seu robô de cobrança está ativo e configurado corretamente!"
+        }),
+      });
+
+      const data = await response.json();
+      if (data.sucesso) {
+        toast.success("Mensagem de teste enviada com sucesso!");
+      } else {
+        toast.error("Erro ao enviar mensagem de teste. Verifique se o robô está ativo.");
+      }
+    } catch (err) {
+      toast.error("Erro de conexão ao tentar enviar mensagem.");
+    } finally {
+      setTesting(false);
+    }
   };
 
   if (fetching) {
@@ -145,6 +177,42 @@ function SettingsComponent() {
                 Salvar Configurações
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="max-w-2xl border-slate-200 dark:border-slate-800 shadow-sm mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Send className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <CardTitle>Testar Conexão WhatsApp</CardTitle>
+                <CardDescription>Envie uma mensagem de teste para confirmar que o robô está ativo.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="testPhone">Número do WhatsApp (com DDD)</Label>
+                <Input 
+                  id="testPhone" 
+                  placeholder="Ex: 11999999999" 
+                  value={testPhone} 
+                  onChange={e => setTestPhone(e.target.value)}
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800" 
+                onClick={handleTestWhatsApp}
+                disabled={testing}
+              >
+                {testing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MessageSquare className="h-4 w-4 mr-2" />}
+                Testar Envio de WhatsApp
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
