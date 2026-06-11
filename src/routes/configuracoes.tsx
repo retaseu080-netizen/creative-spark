@@ -88,11 +88,15 @@ function SettingsComponent() {
 
     setTesting(true);
     try {
+      // Formatar número para o padrão internacional (55...)
+      const numeroLimpo = testPhone.replace(/\D/g, "");
+      const numeroFinal = numeroLimpo.startsWith("55") ? numeroLimpo : `55${numeroLimpo}`;
+
       const response = await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          number: testPhone,
+          number: numeroFinal,
           message: "🚀 Teste de conexão: O seu robô de cobrança está ativo e configurado corretamente!"
         }),
       });

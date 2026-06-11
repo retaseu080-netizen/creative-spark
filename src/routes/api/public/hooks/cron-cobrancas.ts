@@ -20,7 +20,7 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
           // Busca clientes e junta com as configurações de recebimento da revenda
           const { data: clients, error } = await supabaseAdmin
             .from('clients')
-            .select('*, resale_settings!inner(pix_key, beneficiary_name)')
+            .select('*, resale_settings(pix_key, beneficiary_name)')
             .in('status', ['pendente', 'atrasado', 'bloqueado']);
 
           if (error) throw error;
