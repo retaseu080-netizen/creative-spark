@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { CheckCircle2, MessageSquare, PieChart, ShieldCheck, Globe, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { CheckCircle2, MessageSquare, PieChart, ShieldCheck, Globe, Eye, EyeOff, ArrowLeft, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/landing")({
@@ -19,34 +19,51 @@ export default function LandingPage() {
     resaleName: "",
     email: "",
     password: "",
+    valor: "",
     honeypot: "",
   });
 
   const [countryCode, setCountryCode] = useState("+55");
   const [showPassword, setShowPassword] = useState(false);
+  const [pixInfo, setPixInfo] = useState<{ chave: string; beneficiario: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.honeypot) {
-      console.log("Bot detected");
-      return;
-    }
-    
-    // Simulating account creation
-    console.log("Creating account for:", { ...formData, phone: countryCode + formData.phone });
-    
-    // Preparing data for saving/redirection as requested
-    localStorage.setItem("pending_registration", JSON.stringify({
-      ...formData,
-      fullPhone: countryCode + formData.phone,
-      createdAt: new Date().toISOString()
-    }));
+    if (formData.honeypot) return;
 
-    toast.success("Conta criada com sucesso! Redirecionando...");
-    
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 1500);
+    setLoading(true);
+    try {
+      const response = await fetch("/api/cobranca", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          valor: formData.valor,
+          clienteNome: formData.name,
+          whatsappCliente: countryCode + formData.phone,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.sucesso) {
+        setPixInfo({ chave: data.chave, beneficiario: data.beneficiario });
+        toast.success(data.mensagem);
+      } else {
+        toast.error("Erro ao processar cobrança.");
+      }
+    } catch (err) {
+      toast.error("Erro de conexão.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success("Copiado para a área de transferência!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -118,127 +135,195 @@ export default function LandingPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="bg-white dark:bg-slate-900 pt-6">
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Honeypot Field */}
-                    <div className="hidden" aria-hidden="true">
-                      <Label htmlFor="honeypot">Não preencha este campo</Label>
-                      <Input
-                        id="honeypot"
-                        name="honeypot"
-                        type="text"
-                        autoComplete="off"
-                        value={formData.honeypot}
-                        onChange={(e) => setFormData({...formData, honeypot: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nome *</Label>
+                  {!pixInfo ? (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      {/* Honeypot Field */}
+                      <div className="hidden" aria-hidden="true">
+                        <Label htmlFor="honeypot">Não preencha este campo</Label>
                         <Input
-                          id="name"
-                          placeholder="Seu nome"
-                          required
-                          className="h-11"
-                          value={formData.name}
-                          onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          id="honeypot"
+                          name="honeypot"
+                          type="text"
+                          autoComplete="off"
+                          value={formData.honeypot}
+                          onChange={(e) => setFormData({...formData, honeypot: e.target.value})}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Sobrenome</Label>
-                        <Input
-                          id="lastName"
-                          placeholder="Seu sobrenome"
-                          className="h-11"
-                          value={formData.lastName}
-                          onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        />
-                      </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefone (DDD) *</Label>
-                      <div className="flex gap-2">
-                        <div className="relative w-32">
-                          <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                          <select 
-                            className="w-full h-11 pl-9 pr-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 font-medium"
-                            value={countryCode}
-                            onChange={(e) => setCountryCode(e.target.value)}
-                          >
-                            <option value="+55">🇧🇷 +55</option>
-                            <option value="+1">🇺🇸 +1</option>
-                            <option value="+351">🇵🇹 +351</option>
-                            <option value="+44">🇬🇧 +44</option>
-                            <option value="+34">🇪🇸 +34</option>
-                          </select>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nome *</Label>
+                          <Input
+                            id="name"
+                            placeholder="Seu nome"
+                            required
+                            className="h-11"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Sobrenome</Label>
+                          <Input
+                            id="lastName"
+                            placeholder="Seu sobrenome"
+                            className="h-11"
+                            value={formData.lastName}
+                            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Telefone (DDD) *</Label>
+                        <div className="flex gap-2">
+                          <div className="relative w-32">
+                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                            <select 
+                              className="w-full h-11 pl-9 pr-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-red-500 font-medium"
+                              value={countryCode}
+                              onChange={(e) => setCountryCode(e.target.value)}
+                            >
+                              <option value="+55">🇧🇷 +55</option>
+                              <option value="+1">🇺🇸 +1</option>
+                              <option value="+351">🇵🇹 +351</option>
+                              <option value="+44">🇬🇧 +44</option>
+                              <option value="+34">🇪🇸 +34</option>
+                            </select>
+                          </div>
+                          <Input
+                            id="phone"
+                            className="flex-1 h-11"
+                            placeholder="(00) 00000-0000"
+                            required
+                            value={formData.phone}
+                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="valor">Valor da Cobrança (R$) *</Label>
                         <Input
-                          id="phone"
-                          className="flex-1 h-11"
-                          placeholder="(00) 00000-0000"
+                          id="valor"
+                          type="number"
+                          placeholder="0,00"
                           required
-                          value={formData.phone}
-                          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                          className="h-11"
+                          value={formData.valor}
+                          onChange={(e) => setFormData({...formData, valor: e.target.value})}
                         />
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="resaleName">Nome da Revenda *</Label>
-                      <Input
-                        id="resaleName"
-                        placeholder="Sua revenda"
-                        required
-                        className="h-11"
-                        value={formData.resaleName}
-                        onChange={(e) => setFormData({...formData, resaleName: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">E-mail *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        required
-                        className="h-11"
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Senha *</Label>
-                      <div className="relative">
+                      <div className="space-y-2">
+                        <Label htmlFor="resaleName">Nome da Revenda *</Label>
                         <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Crie uma senha segura"
+                          id="resaleName"
+                          placeholder="Sua revenda"
                           required
-                          className="h-11 pr-10"
-                          value={formData.password}
-                          onChange={(e) => setFormData({...formData, password: e.target.value})}
+                          className="h-11"
+                          value={formData.resaleName}
+                          onChange={(e) => setFormData({...formData, resaleName: e.target.value})}
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
                       </div>
-                    </div>
 
-                    <Button type="submit" className="w-full h-12 text-lg font-bold bg-red-600 hover:bg-red-700 text-white transition-all shadow-lg hover:shadow-red-500/25 mt-2">
-                      Criar minha conta grátis
-                    </Button>
-                    
-                    <p className="text-[11px] text-center text-slate-500 leading-relaxed mt-6">
-                      Ao criar sua conta, você concorda com os <Link to="/" className="underline hover:text-red-600 font-medium">Termos de Uso</Link> e <Link to="/" className="underline hover:text-red-600 font-medium">Política de Privacidade</Link>
-                    </p>
-                  </form>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">E-mail *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          required
+                          className="h-11"
+                          value={formData.email}
+                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Senha *</Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Crie uma senha segura"
+                            required
+                            className="h-11 pr-10"
+                            value={formData.password}
+                            onChange={(e) => setFormData({...formData, password: e.target.value})}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-12 text-lg font-bold bg-red-600 hover:bg-red-700 text-white transition-all shadow-lg hover:shadow-red-500/25 mt-2"
+                        disabled={loading}
+                      >
+                        {loading ? "Processando..." : "Criar minha conta grátis"}
+                      </Button>
+                      
+                      <p className="text-[11px] text-center text-slate-500 leading-relaxed mt-6">
+                        Ao criar sua conta, você concorda com os <Link to="/" className="underline hover:text-red-600 font-medium">Termos de Uso</Link> e <Link to="/" className="underline hover:text-red-600 font-medium">Política de Privacidade</Link>
+                      </p>
+                    </form>
+                  ) : (
+                    <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                      <div className="bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/30 p-6 rounded-2xl text-center">
+                        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Conta pré-registrada!</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Enviamos os dados de pagamento para o seu WhatsApp. Você também pode pagar agora usando os dados abaixo:
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Beneficiário</Label>
+                          <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 font-medium text-slate-900 dark:text-white">
+                            {pixInfo.beneficiario}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Chave Pix (E-mail/CPF)</Label>
+                          <div className="relative group">
+                            <div className="p-3 pr-12 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-sm text-slate-900 dark:text-white break-all">
+                              {pixInfo.chave}
+                            </div>
+                            <button
+                              onClick={() => copyToClipboard(pixInfo.chave)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
+                              title="Copiar chave"
+                            >
+                              {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button 
+                        variant="outline" 
+                        className="w-full h-11"
+                        onClick={() => setPixInfo(null)}
+                      >
+                        Voltar para o formulário
+                      </Button>
+
+                      <p className="text-xs text-center text-slate-500 italic">
+                        Após o pagamento, envie o comprovante pelo WhatsApp.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
