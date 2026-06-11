@@ -33,27 +33,40 @@ export const Route = createFileRoute("/clientes")({
   component: ClientsComponent,
 });
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface Client {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string;
-  status: "Pendente" | "Pago";
+  resale_name: string | null;
   value: string;
-  dueDate?: string;
+  due_date: string | null;
+  status: "pago" | "pendente" | "atrasado";
 }
 
-const initialClients: Client[] = [
-  { id: "1", name: "João Silva", email: "joao@exemplo.com", phone: "5511999999999", status: "Pendente", value: "R$ 450,00" },
-  { id: "2", name: "Maria Oliveira", email: "maria@exemplo.com", phone: "5511988888888", status: "Pago", value: "R$ 1.200,00" },
-  { id: "3", name: "Pedro Santos", email: "pedro@exemplo.com", phone: "5511977777777", status: "Pendente", value: "R$ 890,00" },
-];
-
 function ClientsComponent() {
-  const [clients, setClients] = useState<Client[]>(() => {
-    const saved = localStorage.getItem("app_clients");
-    return saved ? JSON.parse(saved) : initialClients;
-  });
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      toast.error("Erro ao carregar clientes: " + error.message);
+    } else {
+      setClients(data as unknown as Client[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
   const [isOpen, setIsOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
