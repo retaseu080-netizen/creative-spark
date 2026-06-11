@@ -28,7 +28,7 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
           const today = new Date();
           const results = [];
 
-          const urlVPS = "http://204.157.108.55/message/sendText/cobranca";
+          const urlVPS = "http://204.157.108.55:3000/message/sendText/cobranca";
           const apiKeyVPS = "Robson123";
 
           for (const client of clients) {

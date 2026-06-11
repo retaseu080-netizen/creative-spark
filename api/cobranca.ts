@@ -58,8 +58,8 @@ export default async function handler(req, res) {
         .replace('{chave_pix}', cliente.chave_pix_revenda)
         .replace('{valor}', Number(cliente.valor_plano).toFixed(2));
 
-      // Dispara para a sua VPS Cloud Win na porta 8080
-      const urlEvolution = `http://204.157.108{cliente.instancia_whatsapp}`;
+      // Dispara para a sua VPS Cloud Win na porta 3000
+      const urlEvolution = `http://204.157.108.55:3000/message/sendText/${cliente.instancia_whatsapp}`;
 
       await fetch(urlEvolution, {
         method: 'POST',

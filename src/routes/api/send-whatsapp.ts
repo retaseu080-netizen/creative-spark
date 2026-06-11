@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/send-whatsapp')({
             });
           }
 
-          const urlVPS = "http://204.157.108.55/message/sendText/cobranca";
+          const urlVPS = "http://204.157.108.55:3000/message/sendText/cobranca";
           const apiKeyVPS = "Robson123";
 
           const numeroFormatado = number.replace(/\D/g, "");
