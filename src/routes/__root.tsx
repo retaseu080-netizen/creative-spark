@@ -83,6 +83,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Sistema de Cobranças" },
       { name: "description", content: "Gerenciamento de cobranças e usuários" },
+      { property: "og:title", content: "Sistema de Cobranças" },
+      { name: "twitter:title", content: "Sistema de Cobranças" },
+      { property: "og:description", content: "Gerenciamento de cobranças e usuários" },
+      { name: "twitter:description", content: "Gerenciamento de cobranças e usuários" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f34edecf-590e-4044-82a2-41579067a4cb/id-preview-9a69a24a--7a4b161d-7884-4f38-b06c-096f7b8ebf8d.lovable.app-1781191213173.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f34edecf-590e-4044-82a2-41579067a4cb/id-preview-9a69a24a--7a4b161d-7884-4f38-b06c-096f7b8ebf8d.lovable.app-1781191213173.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
