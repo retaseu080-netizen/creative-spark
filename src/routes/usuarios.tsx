@@ -20,6 +20,16 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "../components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { 
@@ -29,9 +39,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "../components/ui/select";
-import { UserPlus, Shield, UserCircle, Edit, Trash2, Circle } from "lucide-react";
+import { UserPlus, Shield, UserCircle, Edit, Trash2, Circle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/usuarios")({
   component: UsersComponent,
@@ -45,20 +56,15 @@ interface TeamUser {
   phone: string;
 }
 
-const initialUsers: TeamUser[] = [
-  { id: "admin-1", name: "Admin Global", email: "admin@sistema.com", role: "admin", phone: "(11) 99999-9999" },
-  { id: "op-1", name: "Operador Padrão", email: "operador@sistema.com", role: "operator", phone: "(11) 98888-8888" },
-];
-
 function UsersComponent() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [users, setUsers] = useState<TeamUser[]>(() => {
-    const saved = localStorage.getItem("team_users");
-    return saved ? JSON.parse(saved) : initialUsers;
-  });
+  const [users, setUsers] = useState<TeamUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<Record<string, { status: string }>>({});
   
   // Form states
@@ -68,9 +74,31 @@ function UsersComponent() {
   const [newRole, setNewRole] = useState<"admin" | "operator">("operator");
   const [newPhone, setNewPhone] = useState("");
 
+  const fetchUsers = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      setUsers(data as any[]);
+    } catch (err: any) {
+      toast.error("Erro ao carregar usuários: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (user && user.role !== "admin") {
-      navigate({ to: "/" });
+    if (user) {
+      if (user.role !== "admin") {
+        navigate({ to: "/" });
+      } else {
+        fetchUsers();
+      }
     }
   }, [user, navigate]);
 
@@ -84,10 +112,6 @@ function UsersComponent() {
     const interval = setInterval(updateStatuses, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("team_users", JSON.stringify(users));
-  }, [users]);
 
   useEffect(() => {
     if (editingUser) {
@@ -120,33 +144,63 @@ function UsersComponent() {
     setNewPhone(formatPhone(e.target.value));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, name: newName, email: newEmail, role: newRole, phone: newPhone } : u));
-      toast.success("Usuário atualizado com sucesso!");
-    } else {
-      const newUser: TeamUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: newName,
-        email: newEmail,
-        role: newRole,
-        phone: newPhone
-      };
-      setUsers([...users, newUser]);
-      toast.success("Usuário adicionado com sucesso!");
+    if (!user) return;
+
+    try {
+      if (editingUser) {
+        const { error } = await supabase
+          .from('team_members')
+          .update({
+            name: newName,
+            email: newEmail,
+            role: newRole,
+            phone: newPhone
+          })
+          .eq('id', editingUser.id);
+
+        if (error) throw error;
+        toast.success("Usuário atualizado com sucesso!");
+      } else {
+        const { error } = await supabase
+          .from('team_members')
+          .insert({
+            resale_id: user.id,
+            name: newName,
+            email: newEmail,
+            role: newRole,
+            phone: newPhone
+          });
+
+        if (error) throw error;
+        toast.success("Usuário adicionado com sucesso!");
+      }
+      setIsOpen(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      toast.error("Erro ao salvar usuário: " + err.message);
     }
-    setIsOpen(false);
-    setEditingUser(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (id === "admin-1") {
-      toast.error("Não é possível excluir o Admin Global.");
-      return;
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', userToDelete);
+
+      if (error) throw error;
+      toast.success("Usuário removido.");
+      fetchUsers();
+    } catch (err: any) {
+      toast.error("Erro ao remover usuário: " + err.message);
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
-    setUsers(users.filter(u => u.id !== id));
-    toast.success("Usuário removido.");
   };
 
   if (user?.role !== "admin") return null;
@@ -224,63 +278,99 @@ function UsersComponent() {
         </div>
 
         <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                <TableHead>Status</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>E-mail</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Nível</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((u) => {
-                const isOnline = statuses[u.id]?.status === "online";
-                return (
-                  <TableRow key={u.id} className="dark:border-slate-800">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Circle className={cn("h-3 w-3 fill-current", isOnline ? "text-green-500" : "text-slate-300")} />
-                        <span className="text-xs font-medium">{isOnline ? "Online" : "Offline"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>{u.phone}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        {u.role === "admin" ? (
-                          <Shield className="h-3.5 w-3.5 text-indigo-600" />
-                        ) : (
-                          <UserCircle className="h-3.5 w-3.5 text-slate-400" />
-                        )}
-                        <span className="capitalize">{u.role === "admin" ? "Administrador" : "Operador"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          setEditingUser(u);
-                          setIsOpen(true);
-                        }}>
-                          <Edit className="h-4 w-4 text-slate-500" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(u.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+              <p className="text-slate-500 text-sm">Carregando usuários...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                  <TableHead>Status</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Nível</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                      Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                ) : (
+                  users.map((u) => {
+                    const isOnline = statuses[u.id]?.status === "online";
+                    return (
+                      <TableRow key={u.id} className="dark:border-slate-800">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Circle className={cn("h-3 w-3 fill-current", isOnline ? "text-green-500" : "text-slate-300")} />
+                            <span className="text-xs font-medium">{isOnline ? "Online" : "Offline"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{u.name}</TableCell>
+                        <TableCell>{u.email}</TableCell>
+                        <TableCell>{u.phone}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            {u.role === "admin" ? (
+                              <Shield className="h-3.5 w-3.5 text-indigo-600" />
+                            ) : (
+                              <UserCircle className="h-3.5 w-3.5 text-slate-400" />
+                            )}
+                            <span className="capitalize">{u.role === "admin" ? "Administrador" : "Operador"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => {
+                              setEditingUser(u);
+                              setIsOpen(true);
+                            }}>
+                              <Edit className="h-4 w-4 text-slate-500" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => {
+                              setUserToDelete(u.id);
+                              setIsDeleteDialogOpen(true);
+                            }}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Deseja excluir este operador?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. O acesso deste colaborador será removido permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Confirmar Exclusão
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
 }
-
-
