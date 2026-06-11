@@ -26,7 +26,11 @@ interface Client {
 }
 
 function HomeComponent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+  }
 
   if (!isAuthenticated) {
     return <LandingPage />;

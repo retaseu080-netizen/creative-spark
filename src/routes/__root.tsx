@@ -120,15 +120,19 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function AuthGuard({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (!isAuthenticated && location.pathname !== "/login" && location.pathname !== "/") {
+    if (!loading && !isAuthenticated && location.pathname !== "/login" && location.pathname !== "/" && location.pathname !== "/landing") {
       navigate({ to: "/" });
     }
-  }, [isAuthenticated, location.pathname, navigate]);
+  }, [isAuthenticated, loading, location.pathname, navigate]);
+
+  if (loading) {
+    return null; // Or a loading spinner
+  }
 
   return <>{children}</>;
 }

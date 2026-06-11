@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -6,12 +6,14 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { CheckCircle2, MessageSquare, PieChart, ShieldCheck, Globe, Eye, EyeOff, ArrowLeft, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/landing")({
   component: LandingPage,
 });
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     lastName: "",
@@ -35,30 +37,68 @@ export default function LandingPage() {
 
     setLoading(true);
     try {
+      // 1. Realizar o cadastro no banco de dados (Supabase Auth)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: `${formData.name} ${formData.lastName}`,
+            role: 'admin',
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      // 2. Criar configuração da revenda
+      if (authData.user) {
+        const { error: settingsError } = await supabase
+          .from('resale_settings')
+          .insert({
+            id: authData.user.id,
+            resale_name: formData.resaleName,
+            pix_key: "seu-email-ou-cpf@dominio.com",
+            beneficiary_name: "Seu Nome Completo",
+          });
+        
+        if (settingsError) {
+          console.error("Erro ao criar configurações da revenda:", settingsError);
+        }
+      }
+
+      // 3. Processo de disparar o WhatsApp para a VPS em segundo plano (Assíncrono)
       const minhaChavePix = "seu-email-ou-cpf@dominio.com"; 
       const nomeBeneficiario = "Seu Nome Completo";
       const numeroFormatado = (countryCode + formData.phone).replace(/\D/g, "");
       const numeroFinal = numeroFormatado.startsWith("55") ? numeroFormatado : `55${numeroFormatado}`;
-      const textoMensagem = `Olá, *${formData.name}*!\n\nSegue os dados para o pagamento da sua cobrança:\n\n💰 *Valor:* R$ ${formData.valor}\n🔑 *Chave Pix:* ${minhaChavePix}\n👤 *Beneficiário:* ${nomeBeneficiario}\n\nApós realizar o pagamento, por favor, envie o comprovante por aqui!`;
+      const textoMensagem = `Olá, *${formData.name}*!\n\nSua conta foi criada com sucesso na revenda *${formData.resaleName}*.\n\nSegue os dados para o pagamento da sua cobrança:\n\n💰 *Valor:* R$ ${formData.valor}\n🔑 *Chave Pix:* ${minhaChavePix}\n👤 *Beneficiário:* ${nomeBeneficiario}\n\nApós realizar o pagamento, envie o comprovante pelo painel!`;
 
-      const response = await fetch("/api/send-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          number: numeroFinal,
-          message: textoMensagem,
-        }),
-      });
+      // Rodar de forma totalmente assíncrona (em segundo plano)
+      // Envolto em um bloco try-catch isolado
+      (async () => {
+        try {
+          await fetch("/api/send-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              number: numeroFinal,
+              message: textoMensagem,
+            }),
+          });
+        } catch (err) {
+          console.error("Erro em segundo plano ao enviar WhatsApp:", err);
+          // O sistema ignora o erro e deixa o usuário entrar no painel
+        }
+      })();
 
-      const data = await response.json();
-      if (data.sucesso) {
-        setPixInfo({ chave: minhaChavePix, beneficiario: nomeBeneficiario });
-        toast.success("Dados enviados para o seu WhatsApp!");
-      } else {
-        toast.error("Erro ao processar cobrança.");
-      }
-    } catch (err) {
-      toast.error("Erro de conexão.");
+      toast.success("Conta criada com sucesso! Redirecionando...");
+      
+      // Login automático e entrada no painel imediatamente
+      navigate({ to: "/" });
+
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar cadastro.");
     } finally {
       setLoading(false);
     }

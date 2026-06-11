@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 export type Role = "admin" | "operator";
 
@@ -12,75 +14,83 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem("auth_user");
-    if (saved) {
-      const parsedUser = JSON.parse(saved);
-      setUser(parsedUser);
-      updateStatus(parsedUser.id, "online");
-    }
-
-    const handleBeforeUnload = () => {
-      const currentUser = localStorage.getItem("auth_user");
-      if (currentUser) {
-        const parsed = JSON.parse(currentUser);
-        updateStatus(parsed.id, "offline");
+    // Check active sessions and sets the user
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || "",
+          role: (session.user.user_metadata?.role as Role) || "admin",
+          name: session.user.user_metadata?.name || "Usuário",
+        });
       }
+      setLoading(false);
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    getSession();
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || "",
+          role: (session.user.user_metadata?.role as Role) || "admin",
+          name: session.user.user_metadata?.name || "Usuário",
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const updateStatus = (userId: string, status: "online" | "offline") => {
-    const statuses = JSON.parse(localStorage.getItem("operator_statuses") || "{}");
-    statuses[userId] = { status, lastSeen: Date.now() };
-    localStorage.setItem("operator_statuses", JSON.stringify(statuses));
-  };
+  const login = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  const login = (email: string, password: string) => {
-    let auth: User | null = null;
-    
-    // Check for dynamic admin credentials
-    const savedAdminEmail = localStorage.getItem("admin_email") || "admin@sistema.com";
-    const savedAdminPass = localStorage.getItem("admin_password") || "admin123";
+    if (error) return false;
 
-    if (email === savedAdminEmail && password === savedAdminPass) {
-      auth = { id: "admin-1", email, role: "admin", name: "Admin Global" };
-    } else if (email === "operador@sistema.com" && password === "op123") {
-      auth = { id: "op-1", email, role: "operator", name: "Operador Padrão" };
-    }
-
-    if (auth) {
-      setUser(auth);
-      localStorage.setItem("auth_user", JSON.stringify(auth));
-      updateStatus(auth.id, "online");
+    if (data.user) {
+      setUser({
+        id: data.user.id,
+        email: data.user.email || "",
+        role: (data.user.user_metadata?.role as Role) || "admin",
+        name: data.user.user_metadata?.name || "Usuário",
+      });
       navigate({ to: "/" });
       return true;
     }
     return false;
   };
 
-  const logout = () => {
-    if (user) updateStatus(user.id, "offline");
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem("auth_user");
     navigate({ to: "/login" });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
       {children}
     </AuthContext.Provider>
   );
