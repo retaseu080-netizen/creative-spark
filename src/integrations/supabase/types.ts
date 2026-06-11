@@ -22,6 +22,7 @@ export type Database = {
           id: string
           name: string
           phone: string
+          resale_id: string | null
           resale_name: string | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           name: string
           phone: string
+          resale_id?: string | null
           resale_name?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -46,10 +48,46 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          resale_id?: string | null
           resale_name?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
           value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_resale_id_fkey"
+            columns: ["resale_id"]
+            isOneToOne: false
+            referencedRelation: "resale_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resale_settings: {
+        Row: {
+          beneficiary_name: string | null
+          created_at: string
+          id: string
+          pix_key: string | null
+          resale_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          beneficiary_name?: string | null
+          created_at?: string
+          id?: string
+          pix_key?: string | null
+          resale_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          beneficiary_name?: string | null
+          created_at?: string
+          id?: string
+          pix_key?: string | null
+          resale_name?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

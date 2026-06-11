@@ -17,10 +17,10 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
         }
 
         try {
-          // 1. O sistema busca no banco de dados os clientes das 3 regras
+          // Busca clientes e junta com as configurações de recebimento da revenda
           const { data: clients, error } = await supabaseAdmin
             .from('clients')
-            .select('*')
+            .select('*, resale_settings!inner(pix_key, beneficiary_name)')
             .in('status', ['pendente', 'atrasado']);
 
           if (error) throw error;
@@ -30,7 +30,6 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
 
           const urlVPS = "http://204.157.108.55/message/sendText/cobranca";
           const apiKeyVPS = "Robson123";
-          const minhaChavePix = "sua-chave@pix.com";
 
           for (const client of clients) {
             if (!client.due_date) continue;
@@ -39,20 +38,20 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
             const diffDays = differenceInDays(dueDate, today);
             const diffDaysOverdue = differenceInDays(today, dueDate);
 
+            // Pega dados de recebimento dinâmicos do banco
+            const pixKey = client.resale_settings?.pix_key || "Chave não configurada";
+            const beneficiaryName = client.resale_settings?.beneficiary_name || "Beneficiário não configurado";
+
             let message = "";
             let shouldSend = false;
 
-            // 2. Para cada grupo, ele monta o texto ideal:
             if (diffDays === 3) {
-              // Faltam exatamente 3 dias
               message = `Lembrete: Sua assinatura vence em 3 dias. Valor: ${client.value}. Prepare seu pagamento!`;
               shouldSend = true;
             } else if (diffDays === 0) {
-              // Vencimento hoje
-              message = `Seu vencimento é hoje! Faça o Pix para a chave: ${minhaChavePix} no valor de ${client.value}`;
+              message = `Seu vencimento é hoje! Faça o Pix para a chave: ${pixKey} no valor de ${client.value}. Beneficiário: ${beneficiaryName}`;
               shouldSend = true;
             } else if (diffDaysOverdue === 5) {
-              // Atrasado há exatamente 5 dias
               message = `Aviso importante: Sua fatura está vencida há 5 dias. Por favor, regularize para evitar bloqueios.`;
               shouldSend = true;
             }
@@ -61,7 +60,6 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
               const numeroFormatado = client.phone.replace(/\D/g, "");
               const numeroFinal = numeroFormatado.startsWith("55") ? numeroFormatado : `55${numeroFormatado}`;
 
-              // 3. O sistema dispara os loops usando o fetch seguro para a sua VPS
               const vpsResponse = await fetch(urlVPS, {
                 method: 'POST',
                 headers: {
@@ -81,7 +79,6 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
                 status: vpsResponse.status
               });
 
-              // Atualiza status para atrasado se necessário
               if (diffDaysOverdue > 0 && client.status === 'pendente') {
                 await supabaseAdmin
                   .from('clients')
@@ -91,7 +88,7 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
             }
           }
 
-          return new Response(JSON.stringify({ success: true, processed: results.length, details: results }), {
+          return new Response(JSON.stringify({ success: true, processed: results.length }), {
             headers: { 'Content-Type': 'application/json' }
           });
 
