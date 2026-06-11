@@ -92,10 +92,18 @@ export default function LandingPage() {
         }
       })();
 
-      toast.success("Conta criada com sucesso! Redirecionando...");
+      // Se o auto-confirm estiver ligado, o session virá preenchido
+      if (authData.session) {
+        await supabase.auth.setSession(authData.session);
+      }
+
+      toast.success("Conta criada com sucesso! Entrando no painel...");
       
-      // Login automático e entrada no painel imediatamente
-      navigate({ to: "/" });
+      // Redirecionamento imediato para o dashboard
+      setTimeout(() => {
+        navigate({ to: "/" });
+      }, 500);
+
 
     } catch (err: any) {
       toast.error(err.message || "Erro ao processar cadastro.");
