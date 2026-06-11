@@ -85,7 +85,7 @@ export const Route = createFileRoute('/api/public/hooks/cron-cobrancas')({
                 status: vpsResponse.status
               });
 
-              if (diffDaysOverdue > 0 && client.status === 'pendente') {
+              if (diffDaysOverdue > 0 && diffDaysOverdue < 5 && client.status === 'pendente') {
                 await supabaseAdmin
                   .from('clients')
                   .update({ status: 'atrasado' })
