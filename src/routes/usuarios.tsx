@@ -163,6 +163,8 @@ function UsersComponent() {
         if (error) throw error;
         toast.success("Usuário atualizado com sucesso!");
       } else {
+        // Para criar um novo usuário que possa logar, idealmente usaríamos uma Edge Function.
+        // Por enquanto, apenas registramos na tabela de membros.
         const { error } = await supabase
           .from('team_members')
           .insert({
@@ -174,7 +176,7 @@ function UsersComponent() {
           });
 
         if (error) throw error;
-        toast.success("Usuário adicionado com sucesso!");
+        toast.success("Usuário adicionado à equipe!");
       }
       setIsOpen(false);
       setEditingUser(null);

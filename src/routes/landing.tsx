@@ -51,15 +51,15 @@ export default function LandingPage() {
 
       if (authError) throw authError;
 
-      // 2. Criar configuração da revenda
+      // 2. Criar configuração da revenda com os dados reais do formulário
       if (authData.user) {
         const { error: settingsError } = await supabase
           .from('resale_settings')
-          .insert({
+          .upsert({
             id: authData.user.id,
             resale_name: formData.resaleName,
-            pix_key: "seu-email-ou-cpf@dominio.com",
-            beneficiary_name: "Seu Nome Completo",
+            pix_key: "Chave pendente", // O usuário configura depois no painel
+            beneficiary_name: `${formData.name} ${formData.lastName}`,
           });
         
         if (settingsError) {
@@ -67,15 +67,21 @@ export default function LandingPage() {
         }
       }
 
-      // 3. Processo de disparar o WhatsApp para a VPS em segundo plano (Assíncrono)
-      const minhaChavePix = "seu-email-ou-cpf@dominio.com"; 
-      const nomeBeneficiario = "Seu Nome Completo";
+      // 3. Preparar informações do Pix para exibição na tela de sucesso
+      const pixKeyPadrao = "seu-email-ou-cpf@dominio.com"; 
+      const beneficiarioPadrao = "Seu Nome Completo";
+      
+      setPixInfo({
+        chave: pixKeyPadrao,
+        beneficiario: beneficiarioPadrao
+      });
+
+      // 4. Processo de disparar o WhatsApp para a VPS em segundo plano (Assíncrono)
       const numeroFormatado = (countryCode + formData.phone).replace(/\D/g, "");
       const numeroFinal = numeroFormatado.startsWith("55") ? numeroFormatado : `55${numeroFormatado}`;
-      const textoMensagem = `Olá, *${formData.name}*!\n\nSua conta foi criada com sucesso na revenda *${formData.resaleName}*.\n\nSegue os dados para o pagamento da sua cobrança:\n\n💰 *Valor:* R$ ${formData.valor}\n🔑 *Chave Pix:* ${minhaChavePix}\n👤 *Beneficiário:* ${nomeBeneficiario}\n\nApós realizar o pagamento, envie o comprovante pelo painel!`;
+      const textoMensagem = `Olá, *${formData.name}*!\n\nSua conta foi criada com sucesso na revenda *${formData.resaleName}*.\n\nSegue os dados para o pagamento da sua cobrança:\n\n💰 *Valor:* R$ ${formData.valor}\n🔑 *Chave Pix:* ${pixKeyPadrao}\n👤 *Beneficiário:* ${beneficiarioPadrao}\n\nApós realizar o pagamento, envie o comprovante pelo painel!`;
 
-      // Rodar de forma totalmente assíncrona (em segundo plano)
-      // Envolto em um bloco try-catch isolado
+      // Rodar de forma totalmente assíncrona
       (async () => {
         try {
           await fetch("/api/send-whatsapp", {
@@ -88,22 +94,20 @@ export default function LandingPage() {
           });
         } catch (err) {
           console.error("Erro em segundo plano ao enviar WhatsApp:", err);
-          // O sistema ignora o erro e deixa o usuário entrar no painel
         }
       })();
 
-      // Se o auto-confirm estiver ligado, o session virá preenchido
+      // Se o auto-confirm estiver ligado ou se o Supabase permitir login direto
       if (authData.session) {
         await supabase.auth.setSession(authData.session);
       }
 
-      toast.success("Conta criada com sucesso! Entrando no painel...");
+      toast.success("Conta criada! Redirecionando para o painel...");
       
-      // Redirecionamento imediato para o dashboard
+      // Redirecionamento após um curto delay para mostrar a mensagem
       setTimeout(() => {
         navigate({ to: "/" });
-      }, 500);
-
+      }, 2000);
 
     } catch (err: any) {
       toast.error(err.message || "Erro ao processar cadastro.");
