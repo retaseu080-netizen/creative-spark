@@ -1,62 +1,55 @@
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req: Request) {
-  // Habilita o CORS para o Lovable acessar a API livremente
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  };
-
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers });
+// Função que escolhe o texto certo baseado nos dias
+function obterTemplatePorRegra(diasAtraso) {
+  if (diasAtraso === 3) {
+    return `Olá, *{nome_cliente}*! Tudo bem? ☀️\n\nPassando para lembrar que a sua assinatura vence em 3 dias, no dia *{data_vencimento}*.\n\n🔑 *CHAVE PIX:* \`{chave_pix}\`\n💳 *VALOR:* \`R$ {valor}\`\n\nPara antecipar o seu pagamento e evitar interrupções, basta fazer o Pix com os dados acima. Se já pagou, por favor desconsidere! 👍`;
   }
+  
+  if (diasAtraso === 0) {
+    return `Atenção, *{nome_cliente}*! ⏳\n\nO seu plano vence *hoje* ({data_vencimento}). Para manter o seu acesso ativo e sem travamentos, efetue o pagamento:\n\n🔑 *CHAVE PIX:* \`{chave_pix}\`\n💳 *VALOR:* \`R$ {valor}\`\n\n*Importante:* O não pagamento hoje poderá gerar a suspensão automática dos serviços nos próximos dias. 🛠️`;
+  }
+  
+  if (diasAtraso === -5) {
+    return `Olá, *{nome_cliente}*. ⚠️\n\nComo o pagamento vencido em {data_vencimento} não foi identificado, o seu *acesso foi suspenso temporariamente*.\n\n🔄 Para reativar o seu sistema imediatamente, faça o Pix com os dados abaixo:\n\n🔑 *CHAVE PIX:* \`{chave_pix}\`\n💳 *VALOR:* \`R$ {valor}\`\n\nApós pagar, envie o comprovante aqui no chat para agilizarmos a sua liberação!`;
+  }
+  
+  return null;
+}
 
-  if (req.method === 'POST') {
-    try {
-      const { valor, clienteNome, whatsappCliente } = await req.json();
+// Função principal que a Vercel/Cron executa
+export default async function handler(req, res) {
+  // ATENÇÃO: Aqui você deve ter a sua busca no banco Neon que gera o array "clientesFiltrados"
+  // Exemplo: const clientesFiltrados = await buscarClientesNoBanco();
 
-      // Ajuste os seus dados do Pix Manual aqui
-      const minhaChavePix = "seu-email-ou-cpf@dominio.com"; 
-      const nomeBeneficiario = "Seu Nome Completo";
+  try {
+    for (const cliente of clientesFiltrados) {
+      let textoTemplate = obterTemplatePorRegra(cliente.dias_atraso);
+      if (!textoTemplate) continue;
 
-      // Formata o número do WhatsApp do cliente
-      const numeroFormatado = whatsappCliente.replace(/\D/g, ""); 
-      const numeroFinal = numeroFormatado.startsWith("55") ? numeroFormatado : `55${numeroFormatado}`;
+      const mensagemFinal = textoTemplate
+        .replace('{nome_cliente}', cliente.nome)
+        .replace('{data_vencimento}', cliente.data_vencimento_formatada)
+        .replace('{chave_pix}', cliente.chave_pix_revenda)
+        .replace('{valor}', Number(cliente.valor_plano).toFixed(2));
 
-      // Mensagem que o robô vai disparar
-      const textoMensagem = `Olá, *${clienteNome}*!\n\nSegue os dados para o pagamento da sua cobrança:\n\n💰 *Valor:* R$ ${valor}\n🔑 *Chave Pix:* ${minhaChavePix}\n👤 *Beneficiário:* ${nomeBeneficiario}\n\nApós realizar o pagamento, por favor, envie o comprovante por aqui!`;
+      // URL corrigida apontando para a sua VPS Cloud Win na porta 8080
+      const urlEvolution = `http://204.157.108{cliente.instancia}`;
 
-      // Disparo seguro direto para o IP da sua VPS na porta 8080
-      const urlVPS = "http://204.157.108";
-      
-      await fetch(urlVPS, {
+      await fetch(urlEvolution, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': 'Robson123'
         },
         body: JSON.stringify({
-          "number": numeroFinal,
-          "options": { "delay": 1200, "presence": "composing" },
-          "textMessage": { "text": textoMensagem }
+          number: cliente.telefone,
+          text: mensagemFinal,
+          delay: 1200 
         })
       });
-
-      return new Response(JSON.stringify({
-        sucesso: true,
-        chave: minhaChavePix,
-        beneficiario: nomeBeneficiario,
-        mensagem: "Cobrança enviada para o seu WhatsApp!"
-      }), { status: 200, headers });
-
-    } catch (error) {
-      return new Response(JSON.stringify({ error: 'Erro ao processar cobrança' }), { status: 500, headers });
     }
-  }
 
-  return new Response(JSON.stringify({ error: 'Método não permitido' }), { status: 405, headers });
+    return res.status(200).json({ status: 'Sucesso', mensagem: 'Disparos processados.' });
+  } catch (erro) {
+    return res.status(500).json({ status: 'Erro', detalhe: erro.message });
+  }
 }
