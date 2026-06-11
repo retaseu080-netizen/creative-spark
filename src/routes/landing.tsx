@@ -35,20 +35,25 @@ export default function LandingPage() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/cobranca", {
+      const minhaChavePix = "seu-email-ou-cpf@dominio.com"; 
+      const nomeBeneficiario = "Seu Nome Completo";
+      const numeroFormatado = (countryCode + formData.phone).replace(/\D/g, "");
+      const numeroFinal = numeroFormatado.startsWith("55") ? numeroFormatado : `55${numeroFormatado}`;
+      const textoMensagem = `Olá, *${formData.name}*!\n\nSegue os dados para o pagamento da sua cobrança:\n\n💰 *Valor:* R$ ${formData.valor}\n🔑 *Chave Pix:* ${minhaChavePix}\n👤 *Beneficiário:* ${nomeBeneficiario}\n\nApós realizar o pagamento, por favor, envie o comprovante por aqui!`;
+
+      const response = await fetch("/api/send-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          valor: formData.valor,
-          clienteNome: formData.name,
-          whatsappCliente: countryCode + formData.phone,
+          number: numeroFinal,
+          message: textoMensagem,
         }),
       });
 
       const data = await response.json();
       if (data.sucesso) {
-        setPixInfo({ chave: data.chave, beneficiario: data.beneficiario });
-        toast.success(data.mensagem);
+        setPixInfo({ chave: minhaChavePix, beneficiario: nomeBeneficiario });
+        toast.success("Dados enviados para o seu WhatsApp!");
       } else {
         toast.error("Erro ao processar cobrança.");
       }
