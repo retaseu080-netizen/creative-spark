@@ -323,6 +323,15 @@ export default function LandingPage() {
                         {loading ? "Processando..." : "Criar minha conta grátis"}
                       </Button>
                       
+                      <div className="mt-4 text-center">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Já tem uma conta?{" "}
+                          <Link to="/login" className="font-bold text-red-600 hover:text-red-700 underline">
+                            Fazer login
+                          </Link>
+                        </p>
+                      </div>
+                      
                       <p className="text-[11px] text-center text-slate-500 leading-relaxed mt-6">
                         Ao criar sua conta, você concorda com os <Link to="/" className="underline hover:text-red-600 font-medium">Termos de Uso</Link> e <Link to="/" className="underline hover:text-red-600 font-medium">Política de Privacidade</Link>
                       </p>
