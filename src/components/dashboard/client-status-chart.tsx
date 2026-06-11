@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Sector } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { parse, isBefore, differenceInDays } from "date-fns";
+import { parseISO, isBefore, differenceInDays } from "date-fns";
 import { useState } from "react";
 
 interface ClientStatusChartProps {
@@ -19,13 +19,14 @@ export function ClientStatusChart({ clients }: ClientStatusChartProps) {
     const today = new Date();
 
     clients.forEach(client => {
-      if (client.status === "Pago") {
+      if (client.status === "pago") {
         paid++;
+      } else if (client.status === "atrasado") {
+        overdue++;
       } else {
-        // Lógica de Vencimento
-        if (client.dueDate) {
-          const dueDate = parse(client.dueDate, "dd/MM/yyyy", new Date());
-          
+        // Se status for pendente, mas a data já passou, conta como vencido
+        if (client.due_date) {
+          const dueDate = parseISO(client.due_date);
           if (isBefore(dueDate, today) && differenceInDays(today, dueDate) > 0) {
             overdue++;
           } else {
