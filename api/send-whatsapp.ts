@@ -18,8 +18,8 @@ export default async function handler(req: Request) {
     try {
       const { number, message } = await req.json();
 
-      // Endereço da VPS fornecido pelo usuário (Note: Este endereço parece incompleto, verifique se falta o último octeto ou porta)
-      const urlVPS = "http://204.157.108"; 
+      // Endereço da VPS atualizado para a nova VPS do usuário
+      const urlVPS = "http://204.157.108.55:3000/message/sendText/cobranca"; 
 
       const response = await fetch(urlVPS, {
         method: 'POST',
