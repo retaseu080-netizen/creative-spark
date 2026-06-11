@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { CheckCircle2, Clock, UserPlus, Edit, Trash2, CalendarCheck, MessageCircle, AlertCircle, Loader2 } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { cn } from "../lib/utils";
-
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/clientes")({
   component: ClientsComponent,
@@ -36,51 +36,56 @@ export const Route = createFileRoute("/clientes")({
 interface Client {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string;
-  status: "Pendente" | "Pago";
+  resale_name: string | null;
   value: string;
-  dueDate?: string;
+  due_date: string | null;
+  status: "pago" | "pendente" | "atrasado";
 }
 
-const initialClients: Client[] = [
-  { id: "1", name: "João Silva", email: "joao@exemplo.com", phone: "5511999999999", status: "Pendente", value: "R$ 450,00" },
-  { id: "2", name: "Maria Oliveira", email: "maria@exemplo.com", phone: "5511988888888", status: "Pago", value: "R$ 1.200,00" },
-  { id: "3", name: "Pedro Santos", email: "pedro@exemplo.com", phone: "5511977777777", status: "Pendente", value: "R$ 890,00" },
-];
-
 function ClientsComponent() {
-  const [clients, setClients] = useState<Client[]>(() => {
-    const saved = localStorage.getItem("app_clients");
-    return saved ? JSON.parse(saved) : initialClients;
-  });
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [nextDueDate, setNextDueDate] = useState("");
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   
-  // Loading and error states for individual row actions
   const [rowLoading, setRowLoading] = useState<Record<string, "manual" | "alert" | null>>({});
   const [rowStatus, setRowStatus] = useState<Record<string, "success" | "error" | null>>({});
 
   const { notifyPayment, genericRequest } = useWebhook();
 
-
-  // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [value, setValue] = useState("");
 
+  const fetchClients = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      toast.error("Erro ao carregar clientes: " + error.message);
+    } else {
+      setClients(data as unknown as Client[]);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    localStorage.setItem("app_clients", JSON.stringify(clients));
-  }, [clients]);
+    fetchClients();
+  }, []);
 
   useEffect(() => {
     if (editingClient) {
       setName(editingClient.name);
-      setEmail(editingClient.email);
+      setEmail(editingClient.email || "");
       setPhone(editingClient.phone);
       setValue(editingClient.value);
     } else {
@@ -94,61 +99,60 @@ function ClientsComponent() {
   const openPaymentModal = (clientId: string) => {
     setSelectedClientId(clientId);
     const nextDate = addMonths(new Date(), 1);
-    setNextDueDate(format(nextDate, "dd/MM/yyyy"));
+    setNextDueDate(format(nextDate, "yyyy-MM-dd"));
     setIsPaymentModalOpen(true);
   };
 
   const handleConfirmPayment = async () => {
     if (!selectedClientId) return;
 
-    setClients(prev => prev.map(c => 
-      c.id === selectedClientId ? { ...c, status: "Pago", dueDate: nextDueDate } : c
-    ));
+    const { error } = await supabase
+      .from('clients')
+      .update({ status: 'pago', due_date: nextDueDate })
+      .eq('id', selectedClientId);
+
+    if (error) {
+      toast.error("Erro ao atualizar pagamento: " + error.message);
+      return;
+    }
 
     toast.success(`Cobrança alterada para Pago. Próximo vencimento: ${nextDueDate}`);
     await notifyPayment(selectedClientId, nextDueDate);
     setIsPaymentModalOpen(false);
     setSelectedClientId(null);
+    fetchClients();
   };
 
   const handleManualPaymentAction = async (client: Client) => {
-    const actionKey = `${client.id}-manual`;
     setRowLoading(prev => ({ ...prev, [client.id]: "manual" }));
-    setRowStatus(prev => ({ ...prev, [client.id]: null }));
+    
+    const { error } = await supabase
+      .from('clients')
+      .update({ status: 'pago' })
+      .eq('id', client.id);
 
-    const payload = {
-      status: 'pago',
-      cliente: client.name,
-      telefone: client.phone,
-      valor: client.value
-    };
-
-    const result = await genericRequest(payload);
-
-    if (result.success) {
-      setRowStatus(prev => ({ ...prev, [client.id]: "success" }));
-      toast.success(`Pagamento de ${client.name} processado via API.`);
-      
-      // Update local status too
-      setClients(prev => prev.map(c => 
-        c.id === client.id ? { ...c, status: "Pago" } : c
-      ));
-    } else {
+    if (error) {
       setRowStatus(prev => ({ ...prev, [client.id]: "error" }));
-      toast.error(`Falha no webhook: ${result.error}`);
+      toast.error("Erro ao atualizar status: " + error.message);
+    } else {
+      const payload = {
+        status: 'pago',
+        cliente: client.name,
+        telefone: client.phone,
+        valor: client.value
+      };
+      await genericRequest(payload);
+      setRowStatus(prev => ({ ...prev, [client.id]: "success" }));
+      toast.success(`Pagamento de ${client.name} processado.`);
+      fetchClients();
     }
 
     setRowLoading(prev => ({ ...prev, [client.id]: null }));
-    
-    // Clear status feedback after a delay
-    setTimeout(() => {
-      setRowStatus(prev => ({ ...prev, [client.id]: null }));
-    }, 3000);
+    setTimeout(() => setRowStatus(prev => ({ ...prev, [client.id]: null })), 3000);
   };
 
   const handleAlertAction = async (client: Client) => {
     setRowLoading(prev => ({ ...prev, [client.id]: "alert" }));
-    setRowStatus(prev => ({ ...prev, [client.id]: null }));
 
     const payload = {
       status: 'pendente',
@@ -162,45 +166,51 @@ function ClientsComponent() {
 
     if (result.success) {
       setRowStatus(prev => ({ ...prev, [client.id]: "success" }));
-      toast.success(`Alerta de ${client.name} disparado com sucesso.`);
+      toast.success(`Alerta de ${client.name} disparado.`);
     } else {
       setRowStatus(prev => ({ ...prev, [client.id]: "error" }));
       toast.error(`Erro ao disparar alerta: ${result.error}`);
     }
 
     setRowLoading(prev => ({ ...prev, [client.id]: null }));
-    
-    setTimeout(() => {
-      setRowStatus(prev => ({ ...prev, [client.id]: null }));
-    }, 3000);
+    setTimeout(() => setRowStatus(prev => ({ ...prev, [client.id]: null })), 3000);
   };
 
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingClient) {
-      setClients(clients.map(c => c.id === editingClient.id ? { ...c, name, email, phone, value } : c));
-      toast.success("Cliente atualizado!");
+      const { error } = await supabase
+        .from('clients')
+        .update({ name, email, phone, value })
+        .eq('id', editingClient.id);
+      
+      if (error) toast.error("Erro ao atualizar: " + error.message);
+      else {
+        toast.success("Cliente atualizado!");
+        fetchClients();
+      }
     } else {
-      const numValue = parseFloat(value.replace(",", "."));
-      const newClient: Client = {
-        id: Math.random().toString(36).substr(2, 9),
-        name,
-        email,
-        phone,
-        value: isNaN(numValue) ? value : `R$ ${numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-        status: "Pendente"
-      };
-      setClients([...clients, newClient]);
-      toast.success("Cliente adicionado!");
+      const { error } = await supabase
+        .from('clients')
+        .insert([{ name, email, phone, value, status: 'pendente' }]);
+      
+      if (error) toast.error("Erro ao adicionar: " + error.message);
+      else {
+        toast.success("Cliente adicionado!");
+        fetchClients();
+      }
     }
     setIsOpen(false);
     setEditingClient(null);
   };
 
-  const handleDelete = (id: string) => {
-    setClients(clients.filter(c => c.id !== id));
-    toast.success("Cliente removido.");
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) toast.error("Erro ao remover: " + error.message);
+    else {
+      toast.success("Cliente removido.");
+      fetchClients();
+    }
   };
 
   const handleWhatsAppCall = (phoneNumber: string) => {
@@ -240,7 +250,7 @@ function ClientsComponent() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="c-email">E-mail</Label>
-                  <Input id="c-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input id="c-email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="c-phone">Telefone (WhatsApp)</Label>
@@ -248,7 +258,7 @@ function ClientsComponent() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="c-value">Valor da Cobrança (ex: 150.00)</Label>
-                  <Input id="c-value" required value={value.replace("R$ ", "")} onChange={e => setValue(e.target.value)} />
+                  <Input id="c-value" required value={value} onChange={e => setValue(e.target.value)} />
                 </div>
                 <DialogFooter className="pt-4">
                   <Button type="submit" className="w-full">
@@ -276,9 +286,9 @@ function ClientsComponent() {
                 <Label htmlFor="next-date">Próxima Data de Vencimento</Label>
                 <Input 
                   id="next-date" 
+                  type="date"
                   value={nextDueDate} 
                   onChange={e => setNextDueDate(e.target.value)}
-                  placeholder="dd/mm/aaaa"
                 />
               </div>
             </div>
@@ -294,7 +304,6 @@ function ClientsComponent() {
             <TableHeader>
               <TableRow className="bg-slate-50 dark:bg-slate-800/50">
                 <TableHead>Nome</TableHead>
-                <TableHead>E-mail</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
@@ -302,24 +311,31 @@ function ClientsComponent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">Carregando...</TableCell>
+                </TableRow>
+              ) : clients.map((client) => (
                 <TableRow key={client.id} className="dark:border-slate-800">
                   <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>{client.email}</TableCell>
                   <TableCell>{client.phone}</TableCell>
                   <TableCell>{client.value}</TableCell>
                   <TableCell>
-                    {client.status === "Pago" ? (
+                    {client.status === "pago" ? (
                       <div className="space-y-1">
                         <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 flex w-fit items-center gap-1 border-green-200">
                           <CheckCircle2 className="h-3 w-3" /> Pago
                         </Badge>
-                        {client.dueDate && (
+                        {client.due_date && (
                           <div className="text-[10px] text-muted-foreground px-1">
-                            Prox: {client.dueDate}
+                            Prox: {format(new Date(client.due_date), 'dd/MM/yyyy')}
                           </div>
                         )}
                       </div>
+                    ) : client.status === "atrasado" ? (
+                      <Badge variant="destructive" className="flex w-fit items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> Atrasado
+                      </Badge>
                     ) : (
                       <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-900/50 dark:text-orange-400 flex w-fit items-center gap-1">
                         <Clock className="h-3 w-3" /> Pendente
@@ -336,7 +352,7 @@ function ClientsComponent() {
                       >
                         <MessageCircle className="h-4 w-4" />
                       </Button>
-                      {client.status === "Pendente" && (
+                      {client.status !== "pago" && (
                         <Button 
                           size="sm" 
                           variant="outline" 
@@ -348,13 +364,6 @@ function ClientsComponent() {
                           )}
                           onClick={() => handleManualPaymentAction(client)}
                         >
-                          {rowLoading[client.id] === "manual" ? (
-                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                          ) : rowStatus[client.id] === "success" ? (
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                          ) : rowStatus[client.id] === "error" ? (
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                          ) : null}
                           Pago Manual
                         </Button>
                       )}
@@ -363,20 +372,9 @@ function ClientsComponent() {
                         size="sm" 
                         variant="outline"
                         disabled={!!rowLoading[client.id]}
-                        className={cn(
-                          "h-8 px-2 text-[11px] font-bold border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors",
-                          rowStatus[client.id] === "success" && "bg-green-500 text-white border-green-600 hover:bg-green-600",
-                          rowStatus[client.id] === "error" && "bg-red-500 text-white border-red-600 hover:bg-red-600"
-                        )}
+                        className="h-8 px-2 text-[11px] font-bold border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors"
                         onClick={() => handleAlertAction(client)}
                       >
-                        {rowLoading[client.id] === "alert" ? (
-                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                        ) : rowStatus[client.id] === "success" ? (
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                        ) : rowStatus[client.id] === "error" ? (
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                        ) : null}
                         Disparar Alerta
                       </Button>
 
@@ -400,4 +398,3 @@ function ClientsComponent() {
     </DashboardLayout>
   );
 }
-

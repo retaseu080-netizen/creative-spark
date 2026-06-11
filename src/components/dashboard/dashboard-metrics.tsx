@@ -43,8 +43,9 @@ export function DashboardMetrics({ clients }: DashboardMetricsProps) {
     let profitValue = 0;
 
     clients.forEach(c => {
-      const val = parseFloat(c.value.replace("R$ ", "").replace(".", "").replace(",", "."));
-      if (c.status === "Pago") {
+      const cleanValue = c.value.replace("R$ ", "").replace(/\./g, "").replace(",", ".");
+      const val = parseFloat(cleanValue);
+      if (c.status === "pago") {
         profitValue += val;
       } else {
         pendingValue += val;

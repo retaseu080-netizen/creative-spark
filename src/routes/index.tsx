@@ -8,9 +8,9 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Table, TableBody, TableCell, TableRow } from "../components/ui/table";
-import { parse, isBefore, differenceInDays } from "date-fns";
+import { parseISO, isBefore, differenceInDays, format } from "date-fns";
 import { AlertCircle, Clock } from "lucide-react";
-import { useWebhook } from "../hooks/use-webhook";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
@@ -19,11 +19,10 @@ export const Route = createFileRoute("/")({
 interface Client {
   id: string;
   name: string;
-  email: string;
-  status: "Pendente" | "Pago";
+  email: string | null;
+  status: "pago" | "pendente" | "atrasado";
   value: string;
-  dueDate?: string;
-  lastAutoTrigger?: string;
+  due_date: string | null;
 }
 
 function HomeComponent() {
@@ -38,60 +37,29 @@ function HomeComponent() {
 
 function DashboardComponent() {
   const [clients, setClients] = useState<Client[]>([]);
-  const { notifyStatusChange } = useWebhook();
+  const [loading, setLoading] = useState(true);
+
+  const fetchClients = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*');
+    
+    if (!error && data) {
+      setClients(data as unknown as Client[]);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const updateClients = () => {
-      const saved = localStorage.getItem("app_clients");
-      if (saved) {
-        const parsedClients: Client[] = JSON.parse(saved);
-        const today = new Date();
-        let hasChanges = false;
-
-        const updatedClients = parsedClients.map(client => {
-          if (client.dueDate) {
-            const dueDate = parse(client.dueDate, "dd/MM/yyyy", new Date());
-            const daysToDue = differenceInDays(dueDate, today);
-            const daysOverdue = differenceInDays(today, dueDate);
-
-            if (daysToDue === 3 && client.status === "Pago" && client.lastAutoTrigger !== `pending_3d_${client.id}_${today.toDateString()}`) {
-              notifyStatusChange(client.id, "PENDING", "3 dias");
-              hasChanges = true;
-              return { ...client, status: "Pendente" as const, lastAutoTrigger: `pending_3d_${client.id}_${today.toDateString()}` };
-            }
-
-            if (daysOverdue === 5 && client.status === "Pendente" && client.lastAutoTrigger !== `overdue_5d_${client.id}_${today.toDateString()}`) {
-               notifyStatusChange(client.id, "OVERDUE_ALERT", "5 dias");
-               hasChanges = true;
-               return { ...client, lastAutoTrigger: `overdue_5d_${client.id}_${today.toDateString()}` };
-            }
-          }
-          return client;
-        });
-
-        if (hasChanges) {
-            localStorage.setItem("app_clients", JSON.stringify(updatedClients));
-        }
-        setClients(updatedClients);
-      }
-    };
-
-    updateClients();
-    const interval = setInterval(updateClients, 60000);
-    
-    const handleStorage = () => updateClients();
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      clearInterval(interval);
-    };
+    fetchClients();
   }, []);
 
   const overdueClients = useMemo(() => {
     const today = new Date();
     return clients.filter(c => {
-      if (c.status === "Pago" || !c.dueDate) return false;
-      const dueDate = parse(c.dueDate, "dd/MM/yyyy", new Date());
+      if (c.status === "pago" || !c.due_date) return false;
+      const dueDate = parseISO(c.due_date);
       return isBefore(dueDate, today) && differenceInDays(today, dueDate) > 0;
     });
   }, [clients]);
@@ -99,8 +67,8 @@ function DashboardComponent() {
   const urgentClients = useMemo(() => {
     const today = new Date();
     return clients.filter(c => {
-      if (c.status === "Pago" || !c.dueDate) return false;
-      const dueDate = parse(c.dueDate, "dd/MM/yyyy", new Date());
+      if (c.status === "pago" || !c.due_date) return false;
+      const dueDate = parseISO(c.due_date);
       const daysToDue = differenceInDays(dueDate, today);
       return daysToDue >= 0 && daysToDue <= 3;
     });
@@ -134,7 +102,9 @@ function DashboardComponent() {
                             <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
                               <TableCell className="py-2 pl-0 font-medium text-xs text-red-600">{c.name}</TableCell>
                               <TableCell className="py-2 text-right pr-0">
-                                <Badge variant="destructive" className="text-[10px] h-5 bg-red-600">{c.dueDate}</Badge>
+                                <Badge variant="destructive" className="text-[10px] h-5 bg-red-600">
+                                  {c.due_date ? format(parseISO(c.due_date), 'dd/MM/yyyy') : '-'}
+                                </Badge>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -162,7 +132,9 @@ function DashboardComponent() {
                             <TableRow key={c.id} className="border-none hover:bg-slate-50 dark:hover:bg-slate-800/50">
                               <TableCell className="py-2 pl-0 font-medium text-xs">{c.name}</TableCell>
                               <TableCell className="py-2 text-right pr-0">
-                                <Badge variant="outline" className="text-[10px] h-5 border-orange-200 text-orange-600">{c.dueDate}</Badge>
+                                <Badge variant="outline" className="text-[10px] h-5 border-orange-200 text-orange-600">
+                                  {c.due_date ? format(parseISO(c.due_date), 'dd/MM/yyyy') : '-'}
+                                </Badge>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -185,7 +157,3 @@ function DashboardComponent() {
     </DashboardLayout>
   );
 }
-
-
-
-
