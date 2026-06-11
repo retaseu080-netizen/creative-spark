@@ -15,6 +15,7 @@ import { Route as LandingRouteImport } from './routes/landing'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksCronCobrancasRouteImport } from './routes/api/public/hooks/cron-cobrancas'
 
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
@@ -46,6 +47,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksCronCobrancasRoute =
+  ApiPublicHooksCronCobrancasRouteImport.update({
+    id: '/api/public/hooks/cron-cobrancas',
+    path: '/api/public/hooks/cron-cobrancas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +70,7 @@ export interface FileRoutesByTo {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +80,7 @@ export interface FileRoutesById {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +91,16 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/api/public/hooks/cron-cobrancas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clientes' | '/configuracoes' | '/landing' | '/login' | '/usuarios'
+  to:
+    | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/landing'
+    | '/login'
+    | '/usuarios'
+    | '/api/public/hooks/cron-cobrancas'
   id:
     | '__root__'
     | '/'
@@ -91,6 +109,7 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/api/public/hooks/cron-cobrancas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +119,7 @@ export interface RootRouteChildren {
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
+  ApiPublicHooksCronCobrancasRoute: typeof ApiPublicHooksCronCobrancasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -146,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/cron-cobrancas': {
+      id: '/api/public/hooks/cron-cobrancas'
+      path: '/api/public/hooks/cron-cobrancas'
+      fullPath: '/api/public/hooks/cron-cobrancas'
+      preLoaderRoute: typeof ApiPublicHooksCronCobrancasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -156,7 +183,18 @@ const rootRouteChildren: RootRouteChildren = {
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
+  ApiPublicHooksCronCobrancasRoute: ApiPublicHooksCronCobrancasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
