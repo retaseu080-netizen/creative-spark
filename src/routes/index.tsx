@@ -16,13 +16,15 @@ export const Route = createFileRoute("/")({
   component: HomeComponent,
 });
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface Client {
   id: string;
   name: string;
-  email: string;
-  status: "Pendente" | "Pago";
+  email: string | null;
+  status: "pago" | "pendente" | "atrasado";
   value: string;
-  dueDate?: string;
+  due_date?: string;
   lastAutoTrigger?: string;
 }
 
@@ -35,6 +37,25 @@ function HomeComponent() {
 
   return <DashboardComponent />;
 }
+
+function DashboardComponent() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*');
+    
+    if (!error && data) {
+      setClients(data as unknown as Client[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
 function DashboardComponent() {
   const [clients, setClients] = useState<Client[]>([]);
