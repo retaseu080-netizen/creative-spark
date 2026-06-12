@@ -16,6 +16,7 @@ import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiWhatsappStatusRouteImport } from './routes/api/whatsapp-status'
+import { Route as ApiWhatsappConnectRouteImport } from './routes/api/whatsapp-connect'
 import { Route as ApiSendWhatsappRouteImport } from './routes/api/send-whatsapp'
 import { Route as ApiPublicHooksCronCobrancasRouteImport } from './routes/api/public/hooks/cron-cobrancas'
 
@@ -54,6 +55,11 @@ const ApiWhatsappStatusRoute = ApiWhatsappStatusRouteImport.update({
   path: '/api/whatsapp-status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappConnectRoute = ApiWhatsappConnectRouteImport.update({
+  id: '/api/whatsapp-connect',
+  path: '/api/whatsapp-connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSendWhatsappRoute = ApiSendWhatsappRouteImport.update({
   id: '/api/send-whatsapp',
   path: '/api/send-whatsapp',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   fileRoutesByTo: FileRoutesByTo
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   id:
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   fileRoutesById: FileRoutesById
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
   ApiSendWhatsappRoute: typeof ApiSendWhatsappRoute
+  ApiWhatsappConnectRoute: typeof ApiWhatsappConnectRoute
   ApiWhatsappStatusRoute: typeof ApiWhatsappStatusRoute
   ApiPublicHooksCronCobrancasRoute: typeof ApiPublicHooksCronCobrancasRoute
 }
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWhatsappStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whatsapp-connect': {
+      id: '/api/whatsapp-connect'
+      path: '/api/whatsapp-connect'
+      fullPath: '/api/whatsapp-connect'
+      preLoaderRoute: typeof ApiWhatsappConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/send-whatsapp': {
       id: '/api/send-whatsapp'
       path: '/api/send-whatsapp'
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
   ApiSendWhatsappRoute: ApiSendWhatsappRoute,
+  ApiWhatsappConnectRoute: ApiWhatsappConnectRoute,
   ApiWhatsappStatusRoute: ApiWhatsappStatusRoute,
   ApiPublicHooksCronCobrancasRoute: ApiPublicHooksCronCobrancasRoute,
 }
