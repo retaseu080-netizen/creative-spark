@@ -44,6 +44,12 @@ export function DashboardLayout({ children }: SidebarProps) {
       roles: ["admin", "operator"],
     },
     {
+      title: "Conexão WhatsApp",
+      icon: Smartphone,
+      to: "/whatsapp",
+      roles: ["admin"],
+    },
+    {
       title: "Gerenciar Equipe",
       icon: UserSquare2,
       to: "/usuarios",
