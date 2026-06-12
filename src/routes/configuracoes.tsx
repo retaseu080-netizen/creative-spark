@@ -219,7 +219,120 @@ function SettingsComponent() {
             </div>
           </CardContent>
         </Card>
+
+        <ConnectDeviceCard />
       </div>
     </DashboardLayout>
+  );
+}
+
+function ConnectDeviceCard() {
+  const [status, setStatus] = useState<"open" | "connecting" | "close" | "unknown">("unknown");
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [loadingQr, setLoadingQr] = useState(false);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("/api/whatsapp-status");
+      const result = await res.json();
+      if (result.success) {
+        const state = result.data?.instance?.state || result.data?.state || "unknown";
+        setStatus(state);
+        if (state === "open") setQrCode(null);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchQrCode = async () => {
+    setLoadingQr(true);
+    setQrCode(null);
+    try {
+      const res = await fetch("/api/whatsapp-connect");
+      const result = await res.json();
+      if (result.success) {
+        const qr = result.data?.base64 || result.data?.qrcode?.base64 || result.data?.code;
+        if (qr) {
+          setQrCode(qr.startsWith("data:") ? qr : `data:image/png;base64,${qr}`);
+          toast.success("QR Code gerado! Escaneie com o WhatsApp.");
+        } else if (result.data?.instance?.state === "open") {
+          setStatus("open");
+          toast.success("WhatsApp já está conectado!");
+        } else {
+          toast.info("Aguardando QR Code...");
+        }
+      } else {
+        toast.error("Erro ao gerar QR Code. Verifique se o servidor está ativo.");
+      }
+    } catch (err) {
+      toast.error("Erro de conexão com o servidor WhatsApp.");
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (qrCode && status !== "open") {
+      const qrInterval = setInterval(fetchQrCode, 25000);
+      return () => clearInterval(qrInterval);
+    }
+  }, [qrCode, status]);
+
+  return (
+    <Card className="max-w-2xl border-slate-200 dark:border-slate-800 shadow-sm mt-6">
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/10 rounded-lg">
+            <Smartphone className="h-6 w-6 text-blue-500" />
+          </div>
+          <div>
+            <CardTitle>Conectar Dispositivo</CardTitle>
+            <CardDescription>Emparelhe o WhatsApp escaneando o QR Code.</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {status === "open" ? (
+          <div className="flex flex-col items-center text-center py-4 space-y-3">
+            <div className="inline-flex p-3 rounded-full bg-green-500/10">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Conectado</h3>
+              <p className="text-sm text-slate-500">Seu WhatsApp já está emparelhado e pronto para enviar mensagens.</p>
+            </div>
+          </div>
+        ) : qrCode ? (
+          <div className="space-y-3">
+            <div className="flex justify-center bg-white p-4 rounded-lg border border-slate-200">
+              <img src={qrCode} alt="QR Code WhatsApp" className="w-56 h-56" />
+            </div>
+            <p className="text-xs text-center text-slate-500">
+              Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho e escaneie o código.
+            </p>
+            <Button variant="outline" onClick={fetchQrCode} disabled={loadingQr} className="w-full">
+              {loadingQr ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Gerar Novo QR Code
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={fetchQrCode}
+            disabled={loadingQr}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            {loadingQr ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <QrCode className="h-4 w-4 mr-2" />}
+            Gerar QR Code
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
