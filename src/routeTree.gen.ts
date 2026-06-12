@@ -9,15 +9,23 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWhatsappStatusRouteImport } from './routes/api/whatsapp-status'
+import { Route as ApiWhatsappConnectRouteImport } from './routes/api/whatsapp-connect'
 import { Route as ApiSendWhatsappRouteImport } from './routes/api/send-whatsapp'
 import { Route as ApiPublicHooksCronCobrancasRouteImport } from './routes/api/public/hooks/cron-cobrancas'
 
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -48,6 +56,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappStatusRoute = ApiWhatsappStatusRouteImport.update({
+  id: '/api/whatsapp-status',
+  path: '/api/whatsapp-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWhatsappConnectRoute = ApiWhatsappConnectRouteImport.update({
+  id: '/api/whatsapp-connect',
+  path: '/api/whatsapp-connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSendWhatsappRoute = ApiSendWhatsappRouteImport.update({
   id: '/api/send-whatsapp',
   path: '/api/send-whatsapp',
@@ -67,7 +85,10 @@ export interface FileRoutesByFullPath {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
+  '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRoutesByTo {
@@ -77,7 +98,10 @@ export interface FileRoutesByTo {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
+  '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRoutesById {
@@ -88,7 +112,10 @@ export interface FileRoutesById {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
+  '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRouteTypes {
@@ -100,7 +127,10 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/whatsapp'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-connect'
+    | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,7 +140,10 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/whatsapp'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-connect'
+    | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   id:
     | '__root__'
@@ -120,7 +153,10 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/whatsapp'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-connect'
+    | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   fileRoutesById: FileRoutesById
 }
@@ -131,12 +167,22 @@ export interface RootRouteChildren {
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
+  WhatsappRoute: typeof WhatsappRoute
   ApiSendWhatsappRoute: typeof ApiSendWhatsappRoute
+  ApiWhatsappConnectRoute: typeof ApiWhatsappConnectRoute
+  ApiWhatsappStatusRoute: typeof ApiWhatsappStatusRoute
   ApiPublicHooksCronCobrancasRoute: typeof ApiPublicHooksCronCobrancasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/usuarios': {
       id: '/usuarios'
       path: '/usuarios'
@@ -179,6 +225,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whatsapp-status': {
+      id: '/api/whatsapp-status'
+      path: '/api/whatsapp-status'
+      fullPath: '/api/whatsapp-status'
+      preLoaderRoute: typeof ApiWhatsappStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/whatsapp-connect': {
+      id: '/api/whatsapp-connect'
+      path: '/api/whatsapp-connect'
+      fullPath: '/api/whatsapp-connect'
+      preLoaderRoute: typeof ApiWhatsappConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/send-whatsapp': {
       id: '/api/send-whatsapp'
       path: '/api/send-whatsapp'
@@ -203,19 +263,12 @@ const rootRouteChildren: RootRouteChildren = {
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
+  WhatsappRoute: WhatsappRoute,
   ApiSendWhatsappRoute: ApiSendWhatsappRoute,
+  ApiWhatsappConnectRoute: ApiWhatsappConnectRoute,
+  ApiWhatsappStatusRoute: ApiWhatsappStatusRoute,
   ApiPublicHooksCronCobrancasRoute: ApiPublicHooksCronCobrancasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

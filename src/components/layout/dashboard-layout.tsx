@@ -12,7 +12,8 @@ import {
   X,
   MessageSquare,
   MessageCircleQuestion,
-  Lock
+  Lock,
+  Smartphone
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
@@ -41,6 +42,12 @@ export function DashboardLayout({ children }: SidebarProps) {
       icon: Users,
       to: "/clientes",
       roles: ["admin", "operator"],
+    },
+    {
+      title: "Conexão WhatsApp",
+      icon: Smartphone,
+      to: "/whatsapp",
+      roles: ["admin"],
     },
     {
       title: "Gerenciar Equipe",
