@@ -15,6 +15,7 @@ import { Route as LandingRouteImport } from './routes/landing'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWhatsappStatusRouteImport } from './routes/api/whatsapp-status'
 import { Route as ApiSendWhatsappRouteImport } from './routes/api/send-whatsapp'
 import { Route as ApiPublicHooksCronCobrancasRouteImport } from './routes/api/public/hooks/cron-cobrancas'
 
@@ -48,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappStatusRoute = ApiWhatsappStatusRouteImport.update({
+  id: '/api/whatsapp-status',
+  path: '/api/whatsapp-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSendWhatsappRoute = ApiSendWhatsappRouteImport.update({
   id: '/api/send-whatsapp',
   path: '/api/send-whatsapp',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRoutesByTo {
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRoutesById {
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
+  '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
   '/api/public/hooks/cron-cobrancas': typeof ApiPublicHooksCronCobrancasRoute
 }
 export interface FileRouteTypes {
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   id:
     | '__root__'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/api/send-whatsapp'
+    | '/api/whatsapp-status'
     | '/api/public/hooks/cron-cobrancas'
   fileRoutesById: FileRoutesById
 }
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
   ApiSendWhatsappRoute: typeof ApiSendWhatsappRoute
+  ApiWhatsappStatusRoute: typeof ApiWhatsappStatusRoute
   ApiPublicHooksCronCobrancasRoute: typeof ApiPublicHooksCronCobrancasRoute
 }
 
@@ -179,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whatsapp-status': {
+      id: '/api/whatsapp-status'
+      path: '/api/whatsapp-status'
+      fullPath: '/api/whatsapp-status'
+      preLoaderRoute: typeof ApiWhatsappStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/send-whatsapp': {
       id: '/api/send-whatsapp'
       path: '/api/send-whatsapp'
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
   ApiSendWhatsappRoute: ApiSendWhatsappRoute,
+  ApiWhatsappStatusRoute: ApiWhatsappStatusRoute,
   ApiPublicHooksCronCobrancasRoute: ApiPublicHooksCronCobrancasRoute,
 }
 export const routeTree = rootRouteImport
