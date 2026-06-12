@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LandingRouteImport } from './routes/landing'
@@ -20,6 +21,11 @@ import { Route as ApiWhatsappConnectRouteImport } from './routes/api/whatsapp-co
 import { Route as ApiSendWhatsappRouteImport } from './routes/api/send-whatsapp'
 import { Route as ApiPublicHooksCronCobrancasRouteImport } from './routes/api/public/hooks/cron-cobrancas'
 
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
   '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
   '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/whatsapp': typeof WhatsappRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
   '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/whatsapp'
     | '/api/send-whatsapp'
     | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/whatsapp'
     | '/api/send-whatsapp'
     | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/landing'
     | '/login'
     | '/usuarios'
+    | '/whatsapp'
     | '/api/send-whatsapp'
     | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
+  WhatsappRoute: typeof WhatsappRoute
   ApiSendWhatsappRoute: typeof ApiSendWhatsappRoute
   ApiWhatsappConnectRoute: typeof ApiWhatsappConnectRoute
   ApiWhatsappStatusRoute: typeof ApiWhatsappStatusRoute
@@ -163,6 +176,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/usuarios': {
       id: '/usuarios'
       path: '/usuarios'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
+  WhatsappRoute: WhatsappRoute,
   ApiSendWhatsappRoute: ApiSendWhatsappRoute,
   ApiWhatsappConnectRoute: ApiWhatsappConnectRoute,
   ApiWhatsappStatusRoute: ApiWhatsappStatusRoute,
