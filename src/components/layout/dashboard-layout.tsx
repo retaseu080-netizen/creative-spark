@@ -12,7 +12,8 @@ import {
   X,
   MessageSquare,
   MessageCircleQuestion,
-  Lock
+  Lock,
+  Smartphone
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ThemeToggle } from "../theme-toggle";
