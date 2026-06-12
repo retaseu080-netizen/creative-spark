@@ -7,7 +7,7 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, Loader2, Send, MessageSquare } from "lucide-react";
+import { Wallet, Loader2, Send, MessageSquare, QrCode, CheckCircle2, Smartphone, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
   component: SettingsComponent,
