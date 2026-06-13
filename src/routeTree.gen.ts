@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiWhatsappStatusRouteImport } from './routes/api/whatsapp-status'
 import { Route as ApiWhatsappConnectRouteImport } from './routes/api/whatsapp-connect'
 import { Route as ApiSendWhatsappRouteImport } from './routes/api/send-whatsapp'
+import { Route as ApiEvolutionProxyRouteImport } from './routes/api/evolution-proxy'
 import { Route as ApiPublicHooksCronCobrancasRouteImport } from './routes/api/public/hooks/cron-cobrancas'
 
 const WhatsappRoute = WhatsappRouteImport.update({
@@ -71,6 +72,11 @@ const ApiSendWhatsappRoute = ApiSendWhatsappRouteImport.update({
   path: '/api/send-whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEvolutionProxyRoute = ApiEvolutionProxyRouteImport.update({
+  id: '/api/evolution-proxy',
+  path: '/api/evolution-proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksCronCobrancasRoute =
   ApiPublicHooksCronCobrancasRouteImport.update({
     id: '/api/public/hooks/cron-cobrancas',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/evolution-proxy': typeof ApiEvolutionProxyRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
   '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/evolution-proxy': typeof ApiEvolutionProxyRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
   '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
   '/whatsapp': typeof WhatsappRoute
+  '/api/evolution-proxy': typeof ApiEvolutionProxyRoute
   '/api/send-whatsapp': typeof ApiSendWhatsappRoute
   '/api/whatsapp-connect': typeof ApiWhatsappConnectRoute
   '/api/whatsapp-status': typeof ApiWhatsappStatusRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/whatsapp'
+    | '/api/evolution-proxy'
     | '/api/send-whatsapp'
     | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/whatsapp'
+    | '/api/evolution-proxy'
     | '/api/send-whatsapp'
     | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/usuarios'
     | '/whatsapp'
+    | '/api/evolution-proxy'
     | '/api/send-whatsapp'
     | '/api/whatsapp-connect'
     | '/api/whatsapp-status'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
   WhatsappRoute: typeof WhatsappRoute
+  ApiEvolutionProxyRoute: typeof ApiEvolutionProxyRoute
   ApiSendWhatsappRoute: typeof ApiSendWhatsappRoute
   ApiWhatsappConnectRoute: typeof ApiWhatsappConnectRoute
   ApiWhatsappStatusRoute: typeof ApiWhatsappStatusRoute
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSendWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/evolution-proxy': {
+      id: '/api/evolution-proxy'
+      path: '/api/evolution-proxy'
+      fullPath: '/api/evolution-proxy'
+      preLoaderRoute: typeof ApiEvolutionProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/cron-cobrancas': {
       id: '/api/public/hooks/cron-cobrancas'
       path: '/api/public/hooks/cron-cobrancas'
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
   WhatsappRoute: WhatsappRoute,
+  ApiEvolutionProxyRoute: ApiEvolutionProxyRoute,
   ApiSendWhatsappRoute: ApiSendWhatsappRoute,
   ApiWhatsappConnectRoute: ApiWhatsappConnectRoute,
   ApiWhatsappStatusRoute: ApiWhatsappStatusRoute,
